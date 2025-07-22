@@ -1,19 +1,29 @@
 from datetime import datetime
+from enum import Enum
 from typing import Dict, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 
+# Enum for submission status
+class SubmissionStatus(str, Enum):
+    DRAFT = 'draft'
+    READY = 'ready'
+    SUBMITTED = 'submitted'
+    REJECTED = 'rejected'
+
+
 # Base Experiment schema
 class ExperimentBase(BaseModel):
     """Base Experiment schema with common attributes."""
-    experiment_id_serial: str
     sample_id: UUID
-    experiment_accession_vector: str
-    run_accession_text: UUID
+    experiment_accession: str
+    run_accession: UUID
     internal_notes: Optional[str] = None
     internal_priority_flag: Optional[str] = None
+    # BPA fields
+    bpa_package_id: str
 
 
 # Schema for creating a new experiment
@@ -26,11 +36,12 @@ class ExperimentCreate(ExperimentBase):
 class ExperimentUpdate(BaseModel):
     """Schema for updating an existing experiment."""
     sample_id: Optional[UUID] = None
-    experiment_accession_vector: Optional[str] = None
-    run_accession_text: Optional[UUID] = None
+    experiment_accession: Optional[str] = None
+    run_accession: Optional[UUID] = None
     source_json: Optional[Dict] = None
     internal_notes: Optional[str] = None
     internal_priority_flag: Optional[str] = None
+    bpa_package_id: Optional[str] = None
 
 
 # Schema for experiment in DB
@@ -56,17 +67,17 @@ class Experiment(ExperimentInDBBase):
 # Base ExperimentSubmitted schema
 class ExperimentSubmittedBase(BaseModel):
     """Base ExperimentSubmitted schema with common attributes."""
-    experiment_id_serial: str
     sample_id: UUID
-    status: str = Field(..., description="Status of the submission: draft, submitted, or rejected")
+    status: SubmissionStatus = Field(default=SubmissionStatus.DRAFT, description="Status of the submission")
 
 
 # Schema for creating a new experiment submission
 class ExperimentSubmittedCreate(ExperimentSubmittedBase):
     """Schema for creating a new experiment submission."""
     experiment_id: Optional[UUID] = None
-    experiment_accession_vector: Optional[str] = None
-    run_accession_text: Optional[UUID] = None
+    experiment_accession: Optional[str] = None
+    run_accession: Optional[UUID] = None
+    internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
 
@@ -75,10 +86,11 @@ class ExperimentSubmittedCreate(ExperimentSubmittedBase):
 class ExperimentSubmittedUpdate(BaseModel):
     """Schema for updating an existing experiment submission."""
     sample_id: Optional[UUID] = None
-    experiment_accession_vector: Optional[str] = None
-    run_accession_text: Optional[UUID] = None
+    experiment_accession: Optional[str] = None
+    run_accession: Optional[UUID] = None
+    internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
-    status: Optional[str] = None
+    status: Optional[SubmissionStatus] = None
     submitted_at: Optional[datetime] = None
 
 
@@ -87,8 +99,9 @@ class ExperimentSubmittedInDBBase(ExperimentSubmittedBase):
     """Base schema for ExperimentSubmitted in DB, includes id and timestamps."""
     id: UUID
     experiment_id: Optional[UUID] = None
-    experiment_accession_vector: Optional[str] = None
-    run_accession_text: Optional[UUID] = None
+    experiment_accession: Optional[str] = None
+    run_accession: Optional[UUID] = None
+    internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
     created_at: datetime
@@ -107,9 +120,8 @@ class ExperimentSubmitted(ExperimentSubmittedInDBBase):
 # Base ExperimentFetched schema
 class ExperimentFetchedBase(BaseModel):
     """Base ExperimentFetched schema with common attributes."""
-    experiment_id_serial: str
-    experiment_accession_vector: str
-    run_accession_text: UUID
+    experiment_accession: str
+    run_accession: UUID
     sample_id: UUID
     fetched_at: datetime
 

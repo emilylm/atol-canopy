@@ -39,7 +39,6 @@ class BioprojectExperiment(Base):
     bioproject_id = Column(UUID(as_uuid=True), ForeignKey("bioproject.id"), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=False)
     bioproject_accession_vector = Column(Text, nullable=False)
-    experiment_id_serial = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     

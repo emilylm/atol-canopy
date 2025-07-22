@@ -1,18 +1,26 @@
 from datetime import datetime
+from enum import Enum
 from typing import Dict, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 
+# Enum for submission status
+class SubmissionStatus(str, Enum):
+    DRAFT = 'draft'
+    READY = 'ready'
+    SUBMITTED = 'submitted'
+    REJECTED = 'rejected'
+
+
 # Base Assembly schema
 class AssemblyBase(BaseModel):
     """Base Assembly schema with common attributes."""
-    assembly_id_serial: str
     organism_id: UUID
     sample_id: UUID
     experiment_id: Optional[UUID] = None
-    assembly_accession_vector: Optional[str] = None
+    assembly_accession: Optional[str] = None
     internal_notes: Optional[str] = None
 
 
@@ -28,7 +36,7 @@ class AssemblyUpdate(BaseModel):
     organism_id: Optional[UUID] = None
     sample_id: Optional[UUID] = None
     experiment_id: Optional[UUID] = None
-    assembly_accession_vector: Optional[str] = None
+    assembly_accession: Optional[str] = None
     source_json: Optional[Dict] = None
     internal_notes: Optional[str] = None
 
@@ -56,17 +64,17 @@ class Assembly(AssemblyInDBBase):
 # Base AssemblySubmitted schema
 class AssemblySubmittedBase(BaseModel):
     """Base AssemblySubmitted schema with common attributes."""
-    assembly_id_serial: str
     organism_id: UUID
     sample_id: UUID
     experiment_id: Optional[UUID] = None
-    status: str = Field(..., description="Status of the submission: draft, submitted, or rejected")
+    status: SubmissionStatus = Field(default=SubmissionStatus.DRAFT, description="Status of the submission")
 
 
 # Schema for creating a new assembly submission
 class AssemblySubmittedCreate(AssemblySubmittedBase):
     """Schema for creating a new assembly submission."""
     assembly_id: Optional[UUID] = None
+    internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
 
@@ -77,8 +85,9 @@ class AssemblySubmittedUpdate(BaseModel):
     organism_id: Optional[UUID] = None
     sample_id: Optional[UUID] = None
     experiment_id: Optional[UUID] = None
+    internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
-    status: Optional[str] = None
+    status: Optional[SubmissionStatus] = None
     submitted_at: Optional[datetime] = None
 
 
@@ -87,6 +96,7 @@ class AssemblySubmittedInDBBase(AssemblySubmittedBase):
     """Base schema for AssemblySubmitted in DB, includes id and timestamps."""
     id: UUID
     assembly_id: Optional[UUID] = None
+    internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
     created_at: datetime
@@ -105,8 +115,7 @@ class AssemblySubmitted(AssemblySubmittedInDBBase):
 # Base AssemblyFetched schema
 class AssemblyFetchedBase(BaseModel):
     """Base AssemblyFetched schema with common attributes."""
-    assembly_id_serial: str
-    assembly_accession_vector: str
+    assembly_accession: str
     organism_id: UUID
     sample_id: UUID
     experiment_id: Optional[UUID] = None

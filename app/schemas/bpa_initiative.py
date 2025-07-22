@@ -8,8 +8,7 @@ from pydantic import BaseModel
 # Base BPA Initiative schema
 class BPAInitiativeBase(BaseModel):
     """Base BPA Initiative schema with common attributes."""
-    bpa_initiative_id_serial: str
-    name_vector: str
+    name: str
     shipment_accession: Optional[str] = None
 
 
@@ -22,7 +21,7 @@ class BPAInitiativeCreate(BPAInitiativeBase):
 # Schema for updating an existing BPA Initiative
 class BPAInitiativeUpdate(BaseModel):
     """Schema for updating an existing BPA Initiative."""
-    name_vector: Optional[str] = None
+    name: Optional[str] = None
     shipment_accession: Optional[str] = None
 
 

@@ -17,9 +17,8 @@ class GenomeNote(Base):
     __tablename__ = "genome_note"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    genome_note_id_serial = Column(String, unique=True, nullable=False)
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=False)
-    note_vector = Column(Text, nullable=True)
+    note = Column(Text, nullable=True)
     other_fields = Column(Text, nullable=True)
     version_chain_id = Column(UUID(as_uuid=True), nullable=True)
     is_published = Column(Boolean, nullable=False, default=False)
@@ -41,7 +40,6 @@ class GenomeNoteAssembly(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     genome_note_id = Column(UUID(as_uuid=True), ForeignKey("genome_note.id"), nullable=False)
     assembly_id = Column(UUID(as_uuid=True), ForeignKey("assembly.id"), nullable=False)
-    genome_note_id_serial = Column(String, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     

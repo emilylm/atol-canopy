@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -17,11 +17,10 @@ class Assembly(Base):
     __tablename__ = "assembly"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    assembly_id_serial = Column(String, unique=True, nullable=False)
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=False)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=True)
-    assembly_accession_vector = Column(Text, unique=True, nullable=True)
+    assembly_accession = Column(Text, unique=True, nullable=True)
     source_json = Column(JSONB, nullable=True)
     internal_notes = Column(Text, nullable=True)
     synced_at = Column(DateTime, nullable=True)
@@ -45,13 +44,13 @@ class AssemblySubmitted(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     assembly_id = Column(UUID(as_uuid=True), ForeignKey("assembly.id"), nullable=True)
-    assembly_id_serial = Column(String, nullable=False)
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=False)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=True)
+    internal_json = Column(JSONB, nullable=True)
     submitted_json = Column(JSONB, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
-    status = Column(String, nullable=False)
+    status = Column(SQLAlchemyEnum("draft", "ready", "submitted", "rejected", name="submission_status"), nullable=False, default="draft")
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -72,8 +71,7 @@ class AssemblyFetched(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     assembly_id = Column(UUID(as_uuid=True), ForeignKey("assembly.id"), nullable=True)
-    assembly_id_serial = Column(String, nullable=False)
-    assembly_accession_vector = Column(Text, nullable=False)
+    assembly_accession = Column(Text, nullable=False)
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=False)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=True)

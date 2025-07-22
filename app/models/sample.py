@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -17,9 +17,8 @@ class Sample(Base):
     __tablename__ = "sample"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    sample_id_serial = Column(String, unique=True, nullable=False)
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=True)
-    sample_accession_vector = Column(Text, unique=True, nullable=True)
+    sample_accession = Column(Text, unique=True, nullable=True)
     source_json = Column(JSONB, nullable=True)
     internal_notes = Column(Text, nullable=True)
     internal_priority_flag = Column(Text, nullable=True)
@@ -42,11 +41,11 @@ class SampleSubmitted(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=True)
-    sample_id_serial = Column(String, nullable=False)
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=True)
+    internal_json = Column(JSONB, nullable=True)
     submitted_json = Column(JSONB, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
-    status = Column(String, nullable=False)
+    status = Column(SQLAlchemyEnum("draft", "ready", "submitted", "rejected", name="submission_status"), nullable=False, default="draft")
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -65,8 +64,7 @@ class SampleFetched(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=True)
-    sample_id_serial = Column(String, nullable=False)
-    sample_accession_vector = Column(Text, nullable=False)
+    sample_accession = Column(Text, nullable=False)
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=True)
     raw_json = Column(JSONB, nullable=True)
     fetched_at = Column(DateTime, nullable=False)
@@ -89,7 +87,7 @@ class SampleRelationship(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     source_sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
     target_sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
-    relationship_type = Column(String, nullable=False)
+    relationship_type = Column(SQLAlchemyEnum("derived_from", "subsample_of", "parent_of", "child_of", name="relationship_type"), nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     

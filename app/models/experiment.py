@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -17,10 +17,9 @@ class Experiment(Base):
     __tablename__ = "experiment"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    experiment_id_serial = Column(String, unique=True, nullable=False)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
-    experiment_accession_vector = Column(Text, unique=True, nullable=False)
-    run_accession_text = Column(UUID(as_uuid=True), unique=True, nullable=False)
+    experiment_accession = Column(Text, unique=True, nullable=False)
+    run_accession = Column(UUID(as_uuid=True), unique=True, nullable=False)
     source_json = Column(JSONB, nullable=True)
     internal_notes = Column(Text, nullable=True)
     internal_priority_flag = Column(Text, nullable=True)
@@ -43,13 +42,13 @@ class ExperimentSubmitted(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=True)
-    experiment_id_serial = Column(String, nullable=False)
-    experiment_accession_vector = Column(Text, nullable=True)
-    run_accession_text = Column(UUID(as_uuid=True), nullable=True)
+    experiment_accession = Column(Text, nullable=True)
+    run_accession = Column(UUID(as_uuid=True), nullable=True)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
+    internal_json = Column(JSONB, nullable=True)
     submitted_json = Column(JSONB, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
-    status = Column(String, nullable=False)
+    status = Column(SQLAlchemyEnum("draft", "ready", "submitted", "rejected", name="submission_status"), nullable=False, default="draft")
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -68,9 +67,8 @@ class ExperimentFetched(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=True)
-    experiment_id_serial = Column(String, nullable=False)
-    experiment_accession_vector = Column(Text, nullable=False)
-    run_accession_text = Column(UUID(as_uuid=True), nullable=False)
+    experiment_accession = Column(Text, nullable=False)
+    run_accession = Column(UUID(as_uuid=True), nullable=False)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
     raw_json = Column(JSONB, nullable=True)
     fetched_at = Column(DateTime, nullable=False)

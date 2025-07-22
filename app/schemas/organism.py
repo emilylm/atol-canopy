@@ -1,40 +1,40 @@
 from datetime import datetime
+from enum import Enum
 from typing import Dict, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 
+# Enum for submission status
+class SubmissionStatus(str, Enum):
+    DRAFT = 'draft'
+    READY = 'ready'
+    SUBMITTED = 'submitted'
+    REJECTED = 'rejected'
+
+
 # Base Organism schema
 class OrganismBase(BaseModel):
     """Base Organism schema with common attributes."""
-    organism_id_serial: str
     tax_id: int
-    species_taxid_id: int
-    scientific_name_taxon: str
-    common_name_vector: Optional[str] = None
-    internal_notes: Optional[str] = None
+    scientific_name: str
+    common_name: Optional[str] = None
 
 
 # Schema for creating a new organism
 class OrganismCreate(OrganismBase):
     """Schema for creating a new organism."""
     taxonomy_lineage_json: Optional[Dict] = None
-    species_organism_json: Optional[Dict] = None
-    source_json: Optional[Dict] = None
 
 
 # Schema for updating an existing organism
 class OrganismUpdate(BaseModel):
     """Schema for updating an existing organism."""
     tax_id: Optional[int] = None
-    species_taxid_id: Optional[int] = None
-    scientific_name_taxon: Optional[str] = None
-    common_name_vector: Optional[str] = None
+    scientific_name: Optional[str] = None
+    common_name: Optional[str] = None
     taxonomy_lineage_json: Optional[Dict] = None
-    species_organism_json: Optional[Dict] = None
-    source_json: Optional[Dict] = None
-    internal_notes: Optional[str] = None
 
 
 # Schema for organism in DB
@@ -42,10 +42,6 @@ class OrganismInDBBase(OrganismBase):
     """Base schema for Organism in DB, includes id and timestamps."""
     id: UUID
     taxonomy_lineage_json: Optional[Dict] = None
-    species_organism_json: Optional[Dict] = None
-    source_json: Optional[Dict] = None
-    synced_at: Optional[datetime] = None
-    last_checked_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -62,12 +58,10 @@ class Organism(OrganismInDBBase):
 # Base OrganismSubmitted schema
 class OrganismSubmittedBase(BaseModel):
     """Base OrganismSubmitted schema with common attributes."""
-    organism_id_serial: str
     tax_id: int
-    species_taxid_id: int
-    scientific_name_taxon: str
-    common_name_vector: Optional[str] = None
-    status: str = Field(..., description="Status of the submission: draft, submitted, or rejected")
+    scientific_name: str
+    common_name: Optional[str] = None
+    status: SubmissionStatus = Field(..., description="Status of the submission")
 
 
 # Schema for creating a new organism submission
@@ -75,7 +69,6 @@ class OrganismSubmittedCreate(OrganismSubmittedBase):
     """Schema for creating a new organism submission."""
     organism_id: Optional[UUID] = None
     taxonomy_lineage_json: Optional[Dict] = None
-    species_organism_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
 
@@ -84,13 +77,11 @@ class OrganismSubmittedCreate(OrganismSubmittedBase):
 class OrganismSubmittedUpdate(BaseModel):
     """Schema for updating an existing organism submission."""
     tax_id: Optional[int] = None
-    species_taxid_id: Optional[int] = None
-    scientific_name_taxon: Optional[str] = None
-    common_name_vector: Optional[str] = None
+    scientific_name: Optional[str] = None
+    common_name: Optional[str] = None
     taxonomy_lineage_json: Optional[Dict] = None
-    species_organism_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
-    status: Optional[str] = None
+    status: Optional[SubmissionStatus] = None
     submitted_at: Optional[datetime] = None
 
 
@@ -100,7 +91,6 @@ class OrganismSubmittedInDBBase(OrganismSubmittedBase):
     id: UUID
     organism_id: Optional[UUID] = None
     taxonomy_lineage_json: Optional[Dict] = None
-    species_organism_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
     created_at: datetime
@@ -119,11 +109,9 @@ class OrganismSubmitted(OrganismSubmittedInDBBase):
 # Base OrganismFetched schema
 class OrganismFetchedBase(BaseModel):
     """Base OrganismFetched schema with common attributes."""
-    organism_id_serial: str
     tax_id: int
-    species_taxid_id: int
-    scientific_name_taxon: str
-    common_name_vector: Optional[str] = None
+    scientific_name: str
+    common_name: Optional[str] = None
     fetched_at: datetime
 
 
@@ -132,7 +120,6 @@ class OrganismFetchedCreate(OrganismFetchedBase):
     """Schema for creating a new organism fetch record."""
     organism_id: Optional[UUID] = None
     taxonomy_lineage_json: Optional[Dict] = None
-    species_organism_json: Optional[Dict] = None
     fetched_json: Optional[Dict] = None
 
 
@@ -142,7 +129,6 @@ class OrganismFetchedInDBBase(OrganismFetchedBase):
     id: UUID
     organism_id: Optional[UUID] = None
     taxonomy_lineage_json: Optional[Dict] = None
-    species_organism_json: Optional[Dict] = None
     fetched_json: Optional[Dict] = None
     created_at: datetime
     updated_at: datetime

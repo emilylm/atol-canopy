@@ -1,16 +1,32 @@
 from datetime import datetime
+from enum import Enum
 from typing import Dict, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 
+# Enum for submission status
+class SubmissionStatus(str, Enum):
+    DRAFT = 'draft'
+    READY = 'ready'
+    SUBMITTED = 'submitted'
+    REJECTED = 'rejected'
+
+
+# Enum for relationship type
+class RelationshipType(str, Enum):
+    DERIVED_FROM = 'derived_from'
+    SUBSAMPLE_OF = 'subsample_of'
+    PARENT_OF = 'parent_of'
+    CHILD_OF = 'child_of'
+
+
 # Base Sample schema
 class SampleBase(BaseModel):
     """Base Sample schema with common attributes."""
-    sample_id_serial: str
     organism_id: Optional[UUID] = None
-    sample_accession_vector: Optional[str] = None
+    sample_accession: Optional[str] = None
     internal_notes: Optional[str] = None
     internal_priority_flag: Optional[str] = None
 
@@ -25,7 +41,7 @@ class SampleCreate(SampleBase):
 class SampleUpdate(BaseModel):
     """Schema for updating an existing sample."""
     organism_id: Optional[UUID] = None
-    sample_accession_vector: Optional[str] = None
+    sample_accession: Optional[str] = None
     source_json: Optional[Dict] = None
     internal_notes: Optional[str] = None
     internal_priority_flag: Optional[str] = None
@@ -54,15 +70,15 @@ class Sample(SampleInDBBase):
 # Base SampleSubmitted schema
 class SampleSubmittedBase(BaseModel):
     """Base SampleSubmitted schema with common attributes."""
-    sample_id_serial: str
     organism_id: Optional[UUID] = None
-    status: str = Field(..., description="Status of the submission: draft, submitted, or rejected")
+    status: SubmissionStatus = Field(default=SubmissionStatus.DRAFT, description="Status of the submission")
 
 
 # Schema for creating a new sample submission
 class SampleSubmittedCreate(SampleSubmittedBase):
     """Schema for creating a new sample submission."""
     sample_id: Optional[UUID] = None
+    internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
 
@@ -71,8 +87,9 @@ class SampleSubmittedCreate(SampleSubmittedBase):
 class SampleSubmittedUpdate(BaseModel):
     """Schema for updating an existing sample submission."""
     organism_id: Optional[UUID] = None
+    internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
-    status: Optional[str] = None
+    status: Optional[SubmissionStatus] = None
     submitted_at: Optional[datetime] = None
 
 
@@ -81,6 +98,7 @@ class SampleSubmittedInDBBase(SampleSubmittedBase):
     """Base schema for SampleSubmitted in DB, includes id and timestamps."""
     id: UUID
     sample_id: Optional[UUID] = None
+    internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
     created_at: datetime
@@ -99,8 +117,7 @@ class SampleSubmitted(SampleSubmittedInDBBase):
 # Base SampleFetched schema
 class SampleFetchedBase(BaseModel):
     """Base SampleFetched schema with common attributes."""
-    sample_id_serial: str
-    sample_accession_vector: str
+    sample_accession: str
     organism_id: Optional[UUID] = None
     fetched_at: datetime
 
@@ -136,7 +153,7 @@ class SampleRelationshipBase(BaseModel):
     """Base SampleRelationship schema with common attributes."""
     source_sample_id: UUID
     target_sample_id: UUID
-    relationship_type: str = Field(..., description="Type of relationship: derived_from, subsample_of, parent_of, child_of")
+    relationship_type: Optional[RelationshipType] = Field(description="Type of relationship between samples")
 
 
 # Schema for creating a new sample relationship
@@ -148,7 +165,7 @@ class SampleRelationshipCreate(SampleRelationshipBase):
 # Schema for updating an existing sample relationship
 class SampleRelationshipUpdate(BaseModel):
     """Schema for updating an existing sample relationship."""
-    relationship_type: Optional[str] = None
+    relationship_type: Optional[RelationshipType] = None
 
 
 # Schema for sample relationship in DB
