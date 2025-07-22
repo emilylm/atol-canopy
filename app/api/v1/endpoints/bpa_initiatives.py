@@ -51,7 +51,7 @@ def create_bpa_initiative(
     
     initiative = BPAInitiative(
         bpa_initiative_id_serial=initiative_in.bpa_initiative_id_serial,
-        name_vector=initiative_in.name_vector,
+        name=initiative_in.name,
         shipment_accession=initiative_in.shipment_accession,
     )
     db.add(initiative)

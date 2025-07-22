@@ -17,7 +17,7 @@ class BPAInitiative(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bpa_initiative_id_serial = Column(String, unique=True, nullable=False)
-    name_vector = Column(Text, nullable=False)
+    name = Column(Text, nullable=False)
     shipment_accession = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)

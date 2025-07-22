@@ -65,7 +65,8 @@ def create_sample(
     sample = Sample(
         sample_id_serial=sample_in.sample_id_serial,
         organism_id=sample_in.organism_id,
-        sample_accession_vector=sample_in.sample_accession_vector,
+        sample_name=sample_in.sample_name,
+        sample_accession=sample_in.sample_accession,
         source_json=sample_in.source_json,
         internal_notes=sample_in.internal_notes,
         internal_priority_flag=sample_in.internal_priority_flag,
@@ -249,7 +250,7 @@ def create_sample_fetch(
     fetch = SampleFetched(
         sample_id=fetch_in.sample_id,
         sample_id_serial=fetch_in.sample_id_serial,
-        sample_accession_vector=fetch_in.sample_accession_vector,
+        sample_accession=fetch_in.sample_accession,
         organism_id=fetch_in.organism_id,
         raw_json=fetch_in.raw_json,
         fetched_at=fetch_in.fetched_at,

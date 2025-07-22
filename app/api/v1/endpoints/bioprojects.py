@@ -52,12 +52,12 @@ def create_bioproject(
     require_role(current_user, ["curator", "admin"])
     
     bioproject = Bioproject(
-        bioproject_accession_vector=bioproject_in.bioproject_accession_vector,
-        alias_vector=bioproject_in.alias_vector,
-        alias_vector_md5=bioproject_in.alias_vector_md5,
-        study_name_vector=bioproject_in.study_name_vector,
+        bioproject_accession=bioproject_in.bioproject_accession,
+        alias=bioproject_in.alias,
+        alias_md5=bioproject_in.alias_md5,
+        study_name=bioproject_in.study_name,
         new_study_type=bioproject_in.new_study_type,
-        study_abstract_vector=bioproject_in.study_abstract_vector,
+        study_abstract=bioproject_in.study_abstract,
     )
     db.add(bioproject)
     db.commit()
@@ -170,7 +170,7 @@ def create_bioproject_experiment(
     relationship = BioprojectExperiment(
         bioproject_id=relationship_in.bioproject_id,
         experiment_id=relationship_in.experiment_id,
-        bioproject_accession_vector=relationship_in.bioproject_accession_vector,
+        bioproject_accession=relationship_in.bioproject_accession,
         experiment_id_serial=relationship_in.experiment_id_serial,
     )
     db.add(relationship)

@@ -19,6 +19,7 @@ class Sample(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=True)
     sample_accession = Column(Text, unique=True, nullable=True)
+    sample_name = Column(Text, unique=True, nullable=False)
     source_json = Column(JSONB, nullable=True)
     internal_notes = Column(Text, nullable=True)
     internal_priority_flag = Column(Text, nullable=True)

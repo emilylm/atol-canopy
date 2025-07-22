@@ -70,7 +70,7 @@ def create_assembly(
         organism_id=assembly_in.organism_id,
         sample_id=assembly_in.sample_id,
         experiment_id=assembly_in.experiment_id,
-        assembly_accession_vector=assembly_in.assembly_accession_vector,
+        assembly_accession=assembly_in.assembly_accession,
         source_json=assembly_in.source_json,
         internal_notes=assembly_in.internal_notes,
     )
@@ -255,7 +255,7 @@ def create_assembly_fetch(
     fetch = AssemblyFetched(
         assembly_id=fetch_in.assembly_id,
         assembly_id_serial=fetch_in.assembly_id_serial,
-        assembly_accession_vector=fetch_in.assembly_accession_vector,
+        assembly_accession=fetch_in.assembly_accession,
         organism_id=fetch_in.organism_id,
         sample_id=fetch_in.sample_id,
         experiment_id=fetch_in.experiment_id,

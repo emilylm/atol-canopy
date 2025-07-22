@@ -48,6 +48,7 @@ CREATE TABLE sample (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organism_id UUID REFERENCES organism(id),
     sample_accession TEXT UNIQUE,
+    sample_name TEXT UNIQUE NOT NULL,
     -- Denormalised fields from ENA
 
     -- BPA fields (bpa_*)

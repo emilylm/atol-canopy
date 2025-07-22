@@ -62,7 +62,7 @@ def create_experiment(
     experiment = Experiment(
         experiment_id_serial=experiment_in.experiment_id_serial,
         sample_id=experiment_in.sample_id,
-        experiment_accession_vector=experiment_in.experiment_accession_vector,
+        experiment_accession=experiment_in.experiment_accession,
         run_accession_text=experiment_in.run_accession_text,
         source_json=experiment_in.source_json,
         internal_notes=experiment_in.internal_notes,
@@ -177,7 +177,7 @@ def create_experiment_submission(
         experiment_id=submission_in.experiment_id,
         experiment_id_serial=submission_in.experiment_id_serial,
         sample_id=submission_in.sample_id,
-        experiment_accession_vector=submission_in.experiment_accession_vector,
+        experiment_accession=submission_in.experiment_accession,
         run_accession_text=submission_in.run_accession_text,
         submitted_json=submission_in.submitted_json,
         status=submission_in.status,
@@ -249,7 +249,7 @@ def create_experiment_fetch(
     fetch = ExperimentFetched(
         experiment_id=fetch_in.experiment_id,
         experiment_id_serial=fetch_in.experiment_id_serial,
-        experiment_accession_vector=fetch_in.experiment_accession_vector,
+        experiment_accession=fetch_in.experiment_accession,
         run_accession_text=fetch_in.run_accession_text,
         sample_id=fetch_in.sample_id,
         raw_json=fetch_in.raw_json,

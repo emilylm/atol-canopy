@@ -27,6 +27,7 @@ class SampleBase(BaseModel):
     """Base Sample schema with common attributes."""
     organism_id: Optional[UUID] = None
     sample_accession: Optional[str] = None
+    sample_name: Optional[str] = None
     internal_notes: Optional[str] = None
     internal_priority_flag: Optional[str] = None
 
@@ -42,6 +43,7 @@ class SampleUpdate(BaseModel):
     """Schema for updating an existing sample."""
     organism_id: Optional[UUID] = None
     sample_accession: Optional[str] = None
+    sample_name: Optional[str] = None
     source_json: Optional[Dict] = None
     internal_notes: Optional[str] = None
     internal_priority_flag: Optional[str] = None

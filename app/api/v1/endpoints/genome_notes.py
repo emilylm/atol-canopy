@@ -63,7 +63,7 @@ def create_genome_note(
     genome_note = GenomeNote(
         genome_note_id_serial=genome_note_in.genome_note_id_serial,
         organism_id=genome_note_in.organism_id,
-        note_vector=genome_note_in.note_vector,
+        note=genome_note_in.note,
         other_fields=genome_note_in.other_fields,
         version_chain_id=genome_note_in.version_chain_id,
         is_published=genome_note_in.is_published,
