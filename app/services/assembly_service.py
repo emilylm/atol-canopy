@@ -15,9 +15,9 @@ class AssemblyService(BaseService[Assembly, AssemblyCreate, AssemblyUpdate]):
         """Get assemblies by experiment ID."""
         return db.query(Assembly).filter(Assembly.experiment_id == experiment_id).all()
     
-    def get_by_assembly_id_serial(self, db: Session, assembly_id_serial: str) -> Optional[Assembly]:
-        """Get assembly by assembly ID serial."""
-        return db.query(Assembly).filter(Assembly.assembly_id_serial == assembly_id_serial).first()
+    def get_by_assembly_accession(self, db: Session, assembly_accession: str) -> Optional[Assembly]:
+        """Get assembly by assembly accession."""
+        return db.query(Assembly).filter(Assembly.assembly_accession == assembly_accession).first()
     
     def get_multi_with_filters(
         self, 
@@ -26,15 +26,15 @@ class AssemblyService(BaseService[Assembly, AssemblyCreate, AssemblyUpdate]):
         skip: int = 0, 
         limit: int = 100,
         experiment_id: Optional[UUID] = None,
-        assembly_id_serial: Optional[str] = None,
+        assembly_accession: Optional[str] = None,
         assembly_method: Optional[str] = None
     ) -> List[Assembly]:
         """Get assemblies with filters."""
         query = db.query(Assembly)
         if experiment_id:
             query = query.filter(Assembly.experiment_id == experiment_id)
-        if assembly_id_serial:
-            query = query.filter(Assembly.assembly_id_serial == assembly_id_serial)
+        if assembly_accession:
+            query = query.filter(Assembly.assembly_accession == assembly_accession)
         if assembly_method:
             query = query.filter(Assembly.assembly_method == assembly_method)
         return query.offset(skip).limit(limit).all()

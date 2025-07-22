@@ -15,9 +15,13 @@ class ExperimentService(BaseService[Experiment, ExperimentCreate, ExperimentUpda
         """Get experiments by sample ID."""
         return db.query(Experiment).filter(Experiment.sample_id == sample_id).all()
     
-    def get_by_experiment_id_serial(self, db: Session, experiment_id_serial: str) -> Optional[Experiment]:
-        """Get experiment by experiment ID serial."""
-        return db.query(Experiment).filter(Experiment.experiment_id_serial == experiment_id_serial).first()
+    def get_by_experiment_accession(self, db: Session, experiment_accession: str) -> Optional[Experiment]:
+        """Get experiment by experiment accession."""
+        return db.query(Experiment).filter(Experiment.experiment_accession == experiment_accession).first()
+    
+    def get_by_run_accession(self, db: Session, run_accession: str) -> Optional[Experiment]:
+        """Get experiment by run accession."""
+        return db.query(Experiment).filter(Experiment.run_accession == run_accession).first()
     
     def get_multi_with_filters(
         self, 
@@ -26,15 +30,18 @@ class ExperimentService(BaseService[Experiment, ExperimentCreate, ExperimentUpda
         skip: int = 0, 
         limit: int = 100,
         sample_id: Optional[UUID] = None,
-        experiment_id_serial: Optional[str] = None,
+        experiment_accession: Optional[str] = None,
+        run_accession: Optional[str] = None,
         experiment_type: Optional[str] = None
     ) -> List[Experiment]:
         """Get experiments with filters."""
         query = db.query(Experiment)
         if sample_id:
             query = query.filter(Experiment.sample_id == sample_id)
-        if experiment_id_serial:
-            query = query.filter(Experiment.experiment_id_serial == experiment_id_serial)
+        if experiment_accession:
+            query = query.filter(Experiment.experiment_accession == experiment_accession)
+        if run_accession:
+            query = query.filter(Experiment.run_accession == run_accession)
         if experiment_type:
             query = query.filter(Experiment.experiment_type == experiment_type)
         return query.offset(skip).limit(limit).all()

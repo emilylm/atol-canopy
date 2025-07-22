@@ -14,19 +14,19 @@ class BioprojectService(BaseService[Bioproject, BioprojectCreate, BioprojectUpda
     def get_by_bioproject_accession(self, db: Session, bioproject_accession: str) -> Optional[Bioproject]:
         """Get bioproject by bioproject accession."""
         return db.query(Bioproject).filter(
-            Bioproject.bioproject_accession.contains([bioproject_accession])
+            Bioproject.bioproject_accession == bioproject_accession
         ).first()
     
     def get_by_alias(self, db: Session, alias: str) -> List[Bioproject]:
         """Get bioprojects by alias."""
         return db.query(Bioproject).filter(
-            Bioproject.alias.contains([alias])
+            Bioproject.alias == alias
         ).all()
     
     def get_by_study_name(self, db: Session, study_name: str) -> List[Bioproject]:
         """Get bioprojects by study name."""
         return db.query(Bioproject).filter(
-            Bioproject.study_name.contains([study_name])
+            Bioproject.study_name.ilike(f"%{study_name}%")
         ).all()
     
     def get_multi_with_filters(

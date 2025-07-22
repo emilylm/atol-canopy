@@ -15,9 +15,9 @@ class ReadService(BaseService[Read, ReadCreate, ReadUpdate]):
         """Get reads by experiment ID."""
         return db.query(Read).filter(Read.experiment_id == experiment_id).all()
     
-    def get_by_read_id_serial(self, db: Session, read_id_serial: str) -> Optional[Read]:
-        """Get read by read ID serial."""
-        return db.query(Read).filter(Read.read_id_serial == read_id_serial).first()
+    def get_by_dataset_name(self, db: Session, dataset_name: str) -> List[Read]:
+        """Get reads by dataset name."""
+        return db.query(Read).filter(Read.dataset_name == dataset_name).all()
     
     def get_by_file_name(self, db: Session, file_name: str) -> List[Read]:
         """Get reads by file name."""
@@ -34,12 +34,15 @@ class ReadService(BaseService[Read, ReadCreate, ReadUpdate]):
         skip: int = 0, 
         limit: int = 100,
         experiment_id: Optional[UUID] = None,
+        dataset_name: Optional[str] = None,
         file_format: Optional[str] = None
     ) -> List[Read]:
         """Get reads with filters."""
         query = db.query(Read)
         if experiment_id:
             query = query.filter(Read.experiment_id == experiment_id)
+        if dataset_name:
+            query = query.filter(Read.dataset_name == dataset_name)
         if file_format:
             query = query.filter(Read.file_format == file_format)
         return query.offset(skip).limit(limit).all()

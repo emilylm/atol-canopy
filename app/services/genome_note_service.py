@@ -15,9 +15,9 @@ class GenomeNoteService(BaseService[GenomeNote, GenomeNoteCreate, GenomeNoteUpda
         """Get genome notes by organism ID."""
         return db.query(GenomeNote).filter(GenomeNote.organism_id == organism_id).all()
     
-    def get_by_genome_note_id_serial(self, db: Session, genome_note_id_serial: str) -> Optional[GenomeNote]:
-        """Get genome note by genome note ID serial."""
-        return db.query(GenomeNote).filter(GenomeNote.genome_note_id_serial == genome_note_id_serial).first()
+    def get_by_note_content(self, db: Session, note_content: str) -> List[GenomeNote]:
+        """Get genome notes by note content."""
+        return db.query(GenomeNote).filter(GenomeNote.note.ilike(f"%{note_content}%")).all()
     
     def get_by_version_chain_id(self, db: Session, version_chain_id: str) -> List[GenomeNote]:
         """Get genome notes by version chain ID."""

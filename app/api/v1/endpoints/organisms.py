@@ -10,7 +10,7 @@ from app.core.dependencies import (
     get_db,
     require_role,
 )
-from app.models.organism import Organism, OrganismFetched, OrganismSubmitted
+from app.models.organism import Organism, OrganismFetched, OrganismSubmitted, SubmissionStatus
 from app.models.user import User
 from app.schemas.organism import (
     Organism as OrganismSchema,
@@ -21,6 +21,7 @@ from app.schemas.organism import (
     OrganismSubmittedCreate,
     OrganismSubmittedUpdate,
     OrganismUpdate,
+    SubmissionStatus as SchemaSubmissionStatus,
 )
 
 router = APIRouter()
@@ -55,10 +56,9 @@ def create_organism(
     require_role(current_user, ["curator", "admin"])
     
     organism = Organism(
-        organism_id_serial=organism_in.organism_id_serial,
         tax_id=organism_in.tax_id,
         species_taxid_id=organism_in.species_taxid_id,
-        scientific_name_taxon=organism_in.scientific_name_taxon,
+        scientific_name=organism_in.scientific_name,
         common_name=organism_in.common_name,
         taxonomy_lineage_json=organism_in.taxonomy_lineage_json,
         species_organism_json=organism_in.species_organism_json,
@@ -142,7 +142,7 @@ def read_organism_submissions(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    status: Optional[str] = Query(None, description="Filter by submission status"),
+    status: Optional[SchemaSubmissionStatus] = Query(None, description="Filter by submission status"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -172,14 +172,14 @@ def create_organism_submission(
     
     submission = OrganismSubmitted(
         organism_id=submission_in.organism_id,
-        organism_id_serial=submission_in.organism_id_serial,
         tax_id=submission_in.tax_id,
         species_taxid_id=submission_in.species_taxid_id,
-        scientific_name_taxon=submission_in.scientific_name_taxon,
+        scientific_name=submission_in.scientific_name,
         common_name=submission_in.common_name,
         taxonomy_lineage_json=submission_in.taxonomy_lineage_json,
         species_organism_json=submission_in.species_organism_json,
         submitted_json=submission_in.submitted_json,
+        internal_json=submission_in.internal_json,
         status=submission_in.status,
         submitted_at=submission_in.submitted_at,
     )
@@ -248,10 +248,9 @@ def create_organism_fetch(
     
     fetch = OrganismFetched(
         organism_id=fetch_in.organism_id,
-        organism_id_serial=fetch_in.organism_id_serial,
         tax_id=fetch_in.tax_id,
         species_taxid_id=fetch_in.species_taxid_id,
-        scientific_name_taxon=fetch_in.scientific_name_taxon,
+        scientific_name=fetch_in.scientific_name,
         common_name=fetch_in.common_name,
         taxonomy_lineage_json=fetch_in.taxonomy_lineage_json,
         species_organism_json=fetch_in.species_organism_json,

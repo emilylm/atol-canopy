@@ -171,7 +171,7 @@ def create_bioproject_experiment(
         bioproject_id=relationship_in.bioproject_id,
         experiment_id=relationship_in.experiment_id,
         bioproject_accession=relationship_in.bioproject_accession,
-        experiment_id_serial=relationship_in.experiment_id_serial,
+        experiment_accession=relationship_in.experiment_accession,
     )
     db.add(relationship)
     db.commit()

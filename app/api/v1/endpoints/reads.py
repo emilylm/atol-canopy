@@ -55,7 +55,6 @@ def create_read(
     require_role(current_user, ["curator", "admin"])
     
     read = Read(
-        read_id_serial=read_in.read_id_serial,
         experiment_id=read_in.experiment_id,
         dataset_name=read_in.dataset_name,
         file_name=read_in.file_name,

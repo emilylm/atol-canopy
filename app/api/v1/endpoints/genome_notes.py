@@ -61,7 +61,6 @@ def create_genome_note(
     require_role(current_user, ["curator", "admin"])
     
     genome_note = GenomeNote(
-        genome_note_id_serial=genome_note_in.genome_note_id_serial,
         organism_id=genome_note_in.organism_id,
         note=genome_note_in.note,
         other_fields=genome_note_in.other_fields,
@@ -179,7 +178,6 @@ def create_genome_note_assembly(
     relationship = GenomeNoteAssembly(
         genome_note_id=relationship_in.genome_note_id,
         assembly_id=relationship_in.assembly_id,
-        genome_note_id_serial=relationship_in.genome_note_id_serial,
     )
     db.add(relationship)
     db.commit()

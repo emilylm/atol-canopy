@@ -10,7 +10,7 @@ from app.core.dependencies import (
     get_db,
     require_role,
 )
-from app.models.sample import Sample, SampleFetched, SampleRelationship, SampleSubmitted
+from app.models.sample import Sample, SampleFetched, SampleRelationship, SampleSubmitted, SubmissionStatus, RelationshipType
 from app.models.user import User
 from app.schemas.sample import (
     Sample as SampleSchema,
@@ -24,6 +24,8 @@ from app.schemas.sample import (
     SampleSubmittedCreate,
     SampleSubmittedUpdate,
     SampleUpdate,
+    SubmissionStatus as SchemaSubmissionStatus,
+    RelationshipType as SchemaRelationshipType,
 )
 
 router = APIRouter()
@@ -63,7 +65,6 @@ def create_sample(
     require_role(current_user, ["curator", "admin"])
     
     sample = Sample(
-        sample_id_serial=sample_in.sample_id_serial,
         organism_id=sample_in.organism_id,
         sample_name=sample_in.sample_name,
         sample_accession=sample_in.sample_accession,
@@ -148,7 +149,7 @@ def read_sample_submissions(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    status: Optional[str] = Query(None, description="Filter by submission status"),
+    status: Optional[SchemaSubmissionStatus] = Query(None, description="Filter by submission status"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -178,9 +179,11 @@ def create_sample_submission(
     
     submission = SampleSubmitted(
         sample_id=submission_in.sample_id,
-        sample_id_serial=submission_in.sample_id_serial,
         organism_id=submission_in.organism_id,
+        sample_name=submission_in.sample_name,
+        sample_accession=submission_in.sample_accession,
         submitted_json=submission_in.submitted_json,
+        internal_json=submission_in.internal_json,
         status=submission_in.status,
         submitted_at=submission_in.submitted_at,
     )
@@ -249,7 +252,6 @@ def create_sample_fetch(
     
     fetch = SampleFetched(
         sample_id=fetch_in.sample_id,
-        sample_id_serial=fetch_in.sample_id_serial,
         sample_accession=fetch_in.sample_accession,
         organism_id=fetch_in.organism_id,
         raw_json=fetch_in.raw_json,
@@ -269,6 +271,7 @@ def read_sample_relationships(
     limit: int = 100,
     source_sample_id: Optional[UUID] = Query(None, description="Filter by source sample ID"),
     target_sample_id: Optional[UUID] = Query(None, description="Filter by target sample ID"),
+    relationship_type: Optional[SchemaRelationshipType] = Query(None, description="Filter by relationship type"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -280,6 +283,8 @@ def read_sample_relationships(
         query = query.filter(SampleRelationship.source_sample_id == source_sample_id)
     if target_sample_id:
         query = query.filter(SampleRelationship.target_sample_id == target_sample_id)
+    if relationship_type:
+        query = query.filter(SampleRelationship.relationship_type == relationship_type)
     
     relationships = query.offset(skip).limit(limit).all()
     return relationships

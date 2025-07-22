@@ -10,7 +10,7 @@ from app.core.dependencies import (
     get_db,
     require_role,
 )
-from app.models.assembly import Assembly, AssemblyFetched, AssemblySubmitted
+from app.models.assembly import Assembly, AssemblyFetched, AssemblySubmitted, SubmissionStatus
 from app.models.user import User
 from app.schemas.assembly import (
     Assembly as AssemblySchema,
@@ -21,6 +21,7 @@ from app.schemas.assembly import (
     AssemblySubmittedCreate,
     AssemblySubmittedUpdate,
     AssemblyUpdate,
+    SubmissionStatus as SchemaSubmissionStatus,
 )
 
 router = APIRouter()
@@ -66,7 +67,6 @@ def create_assembly(
     require_role(current_user, ["curator", "admin"])
     
     assembly = Assembly(
-        assembly_id_serial=assembly_in.assembly_id_serial,
         organism_id=assembly_in.organism_id,
         sample_id=assembly_in.sample_id,
         experiment_id=assembly_in.experiment_id,
@@ -151,7 +151,7 @@ def read_assembly_submissions(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    status: Optional[str] = Query(None, description="Filter by submission status"),
+    status: Optional[SchemaSubmissionStatus] = Query(None, description="Filter by submission status"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -181,11 +181,12 @@ def create_assembly_submission(
     
     submission = AssemblySubmitted(
         assembly_id=submission_in.assembly_id,
-        assembly_id_serial=submission_in.assembly_id_serial,
         organism_id=submission_in.organism_id,
         sample_id=submission_in.sample_id,
         experiment_id=submission_in.experiment_id,
+        assembly_accession=submission_in.assembly_accession,
         submitted_json=submission_in.submitted_json,
+        internal_json=submission_in.internal_json,
         status=submission_in.status,
         submitted_at=submission_in.submitted_at,
     )
@@ -254,7 +255,6 @@ def create_assembly_fetch(
     
     fetch = AssemblyFetched(
         assembly_id=fetch_in.assembly_id,
-        assembly_id_serial=fetch_in.assembly_id_serial,
         assembly_accession=fetch_in.assembly_accession,
         organism_id=fetch_in.organism_id,
         sample_id=fetch_in.sample_id,

@@ -10,7 +10,7 @@ from app.core.dependencies import (
     get_db,
     require_role,
 )
-from app.models.experiment import Experiment, ExperimentFetched, ExperimentSubmitted
+from app.models.experiment import Experiment, ExperimentFetched, ExperimentSubmitted, SubmissionStatus
 from app.models.user import User
 from app.schemas.experiment import (
     Experiment as ExperimentSchema,
@@ -21,6 +21,7 @@ from app.schemas.experiment import (
     ExperimentSubmittedCreate,
     ExperimentSubmittedUpdate,
     ExperimentUpdate,
+    SubmissionStatus as SchemaSubmissionStatus,
 )
 
 router = APIRouter()
@@ -60,10 +61,9 @@ def create_experiment(
     require_role(current_user, ["curator", "admin"])
     
     experiment = Experiment(
-        experiment_id_serial=experiment_in.experiment_id_serial,
         sample_id=experiment_in.sample_id,
         experiment_accession=experiment_in.experiment_accession,
-        run_accession_text=experiment_in.run_accession_text,
+        run_accession=experiment_in.run_accession,
         source_json=experiment_in.source_json,
         internal_notes=experiment_in.internal_notes,
         internal_priority_flag=experiment_in.internal_priority_flag,
@@ -145,7 +145,7 @@ def read_experiment_submissions(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    status: Optional[str] = Query(None, description="Filter by submission status"),
+    status: Optional[SchemaSubmissionStatus] = Query(None, description="Filter by submission status"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -175,11 +175,11 @@ def create_experiment_submission(
     
     submission = ExperimentSubmitted(
         experiment_id=submission_in.experiment_id,
-        experiment_id_serial=submission_in.experiment_id_serial,
         sample_id=submission_in.sample_id,
         experiment_accession=submission_in.experiment_accession,
-        run_accession_text=submission_in.run_accession_text,
+        run_accession=submission_in.run_accession,
         submitted_json=submission_in.submitted_json,
+        internal_json=submission_in.internal_json,
         status=submission_in.status,
         submitted_at=submission_in.submitted_at,
     )
@@ -248,9 +248,8 @@ def create_experiment_fetch(
     
     fetch = ExperimentFetched(
         experiment_id=fetch_in.experiment_id,
-        experiment_id_serial=fetch_in.experiment_id_serial,
         experiment_accession=fetch_in.experiment_accession,
-        run_accession_text=fetch_in.run_accession_text,
+        run_accession=fetch_in.run_accession,
         sample_id=fetch_in.sample_id,
         raw_json=fetch_in.raw_json,
         fetched_at=fetch_in.fetched_at,

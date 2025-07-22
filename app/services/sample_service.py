@@ -15,9 +15,13 @@ class SampleService(BaseService[Sample, SampleCreate, SampleUpdate]):
         """Get samples by organism ID."""
         return db.query(Sample).filter(Sample.organism_id == organism_id).all()
     
-    def get_by_sample_id_serial(self, db: Session, sample_id_serial: str) -> Optional[Sample]:
-        """Get sample by sample ID serial."""
-        return db.query(Sample).filter(Sample.sample_id_serial == sample_id_serial).first()
+    def get_by_sample_name(self, db: Session, sample_name: str) -> Optional[Sample]:
+        """Get sample by sample name."""
+        return db.query(Sample).filter(Sample.sample_name == sample_name).first()
+    
+    def get_by_sample_accession(self, db: Session, sample_accession: str) -> Optional[Sample]:
+        """Get sample by sample accession."""
+        return db.query(Sample).filter(Sample.sample_accession == sample_accession).first()
     
     def get_multi_with_filters(
         self, 
@@ -26,15 +30,18 @@ class SampleService(BaseService[Sample, SampleCreate, SampleUpdate]):
         skip: int = 0, 
         limit: int = 100,
         organism_id: Optional[UUID] = None,
-        sample_id_serial: Optional[str] = None,
+        sample_name: Optional[str] = None,
+        sample_accession: Optional[str] = None,
         tissue_type: Optional[str] = None
     ) -> List[Sample]:
         """Get samples with filters."""
         query = db.query(Sample)
         if organism_id:
             query = query.filter(Sample.organism_id == organism_id)
-        if sample_id_serial:
-            query = query.filter(Sample.sample_id_serial == sample_id_serial)
+        if sample_name:
+            query = query.filter(Sample.sample_name.ilike(f"%{sample_name}%"))
+        if sample_accession:
+            query = query.filter(Sample.sample_accession == sample_accession)
         if tissue_type:
             query = query.filter(Sample.tissue_type == tissue_type)
         return query.offset(skip).limit(limit).all()
