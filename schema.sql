@@ -4,6 +4,10 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Create ENUM types
+CREATE TYPE submission_status AS ENUM ('draft', 'ready', 'submitted', 'rejected');
+CREATE TYPE relationship_type AS ENUM ('derived_from', 'subsample_of', 'parent_of', 'child_of');
+
 -- ==========================================
 -- Users and Authentication
 -- ==========================================
@@ -11,7 +15,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username VARCHAR(255) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) UNIQUE,
     hashed_password VARCHAR(255) NOT NULL,
     full_name VARCHAR(255),
     roles TEXT[] NOT NULL DEFAULT '{}',
@@ -28,56 +32,13 @@ CREATE TABLE users (
 -- Main organism table
 CREATE TABLE organism (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organism_id_serial TEXT NOT NULL UNIQUE,
     tax_id INTEGER UNIQUE NOT NULL,
-    species_taxid_id INTEGER NOT NULL,
-    scientific_name_taxon TEXT NOT NULL,
-    common_name_vector TEXT,
+    scientific_name TEXT NOT NULL,
+    common_name TEXT,
     taxonomy_lineage_json JSONB,
-    species_organism_json JSONB,
-    source_json JSONB,
-    internal_notes TEXT,
-    synced_at TIMESTAMP,
-    last_checked_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
-
--- Organism submitted table
-CREATE TABLE organism_submitted (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organism_id UUID REFERENCES organism(id),
-    organism_id_serial TEXT NOT NULL,
-    tax_id INTEGER NOT NULL,
-    species_taxid_id INTEGER NOT NULL,
-    scientific_name_taxon TEXT NOT NULL,
-    common_name_vector TEXT,
-    taxonomy_lineage_json JSONB,
-    species_organism_json JSONB,
-    submitted_json JSONB,
-    status TEXT NOT NULL CHECK (status IN ('draft', 'submitted', 'rejected')),
-    submitted_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Organism fetched table
-CREATE TABLE organism_fetched (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organism_id UUID REFERENCES organism(id),
-    organism_id_serial TEXT NOT NULL,
-    tax_id INTEGER NOT NULL,
-    species_taxid_id INTEGER NOT NULL,
-    scientific_name_taxon TEXT NOT NULL,
-    common_name_vector TEXT,
-    taxonomy_lineage_json JSONB,
-    species_organism_json JSONB,
-    fetched_json JSONB,
-    fetched_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
 -- ==========================================
 -- Sample tables
 -- ==========================================
@@ -85,12 +46,15 @@ CREATE TABLE organism_fetched (
 -- Main sample table
 CREATE TABLE sample (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    sample_id_serial TEXT NOT NULL UNIQUE,
     organism_id UUID REFERENCES organism(id),
-    sample_accession_vector TEXT UNIQUE,
+    sample_accession TEXT UNIQUE,
+    -- Denormalised fields from ENA
+
+    -- BPA fields (bpa_*)
+    
+    -- Internal AToL fields (internal_* (or atol_*??))
+
     source_json JSONB,
-    internal_notes TEXT,
-    internal_priority_flag TEXT,
     synced_at TIMESTAMP,
     last_checked_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -101,11 +65,11 @@ CREATE TABLE sample (
 CREATE TABLE sample_submitted (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sample_id UUID REFERENCES sample(id),
-    sample_id_serial TEXT NOT NULL,
     organism_id UUID REFERENCES organism(id),
+    internal_json JSONB,
     submitted_json JSONB,
     submitted_at TIMESTAMP,
-    status TEXT NOT NULL CHECK (status IN ('draft', 'submitted', 'rejected')),
+    status submission_status NOT NULL DEFAULT 'draft',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -114,8 +78,7 @@ CREATE TABLE sample_submitted (
 CREATE TABLE sample_fetched (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sample_id UUID REFERENCES sample(id),
-    sample_id_serial TEXT NOT NULL,
-    sample_accession_vector TEXT NOT NULL,
+    sample_accession TEXT NOT NULL,
     organism_id UUID REFERENCES organism(id),
     raw_json JSONB,
     fetched_at TIMESTAMP NOT NULL,
@@ -128,7 +91,7 @@ CREATE TABLE sample_relationship (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     source_sample_id UUID REFERENCES sample(id) NOT NULL,
     target_sample_id UUID REFERENCES sample(id) NOT NULL,
-    relationship_type TEXT NOT NULL CHECK (relationship_type IN ('derived_from', 'subsample_of', 'parent_of', 'child_of')),
+    relationship_type relationship_type DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT unique_sample_relationship UNIQUE (source_sample_id, target_sample_id, relationship_type)
@@ -141,13 +104,18 @@ CREATE TABLE sample_relationship (
 -- Main experiment table
 CREATE TABLE experiment (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    experiment_id_serial TEXT NOT NULL UNIQUE,
     sample_id UUID REFERENCES sample(id) NOT NULL,
-    experiment_accession_vector TEXT UNIQUE NOT NULL,
+    experiment_accession TEXT UNIQUE NOT NULL,
     run_accession_text UUID UNIQUE NOT NULL,
     source_json JSONB,
-    internal_notes TEXT,
-    internal_priority_flag TEXT,
+    -- Denormalised fields from ENA
+    run_read_count TEXT;
+    run_base_count TEXT;
+    dataset_name TEXT;
+    -- BPA fields (bpa_*)
+    bpa_package_id TEXT UNIQUE NOT NULL,
+    -- Internal AToL fields (internal_* (or atol_*??))
+
     synced_at TIMESTAMP,
     last_checked_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -158,13 +126,13 @@ CREATE TABLE experiment (
 CREATE TABLE experiment_submitted (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     experiment_id UUID REFERENCES experiment(id),
-    experiment_id_serial TEXT NOT NULL,
-    experiment_accession_vector TEXT,
-    run_accession_text UUID,
+    experiment_accession TEXT,
+    run_accession TEXT,
     sample_id UUID REFERENCES sample(id) NOT NULL,
+    internal_json JSONB,
     submitted_json JSONB,
     submitted_at TIMESTAMP,
-    status TEXT NOT NULL CHECK (status IN ('draft', 'submitted', 'rejected')),
+    status submission_status NOT NULL DEFAULT 'draft',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -173,9 +141,8 @@ CREATE TABLE experiment_submitted (
 CREATE TABLE experiment_fetched (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     experiment_id UUID REFERENCES experiment(id),
-    experiment_id_serial TEXT NOT NULL,
-    experiment_accession_vector TEXT NOT NULL,
-    run_accession_text UUID NOT NULL,
+    experiment_accession TEXT NOT NULL,
+    run_accession TEXT NOT NULL,
     sample_id UUID REFERENCES sample(id) NOT NULL,
     raw_json JSONB,
     fetched_at TIMESTAMP NOT NULL,
@@ -190,11 +157,16 @@ CREATE TABLE experiment_fetched (
 -- Main assembly table
 CREATE TABLE assembly (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    assembly_id_serial TEXT NOT NULL UNIQUE,
     organism_id UUID REFERENCES organism(id) NOT NULL,
     sample_id UUID REFERENCES sample(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id),
-    assembly_accession_vector TEXT UNIQUE,
+    assembly_accession TEXT UNIQUE,
+    -- Denormalised fields from ENA
+
+    -- BPA fields (bpa_*)
+    
+    -- Internal AToL fields (internal_* (or atol_*??))
+    
     source_json JSONB,
     internal_notes TEXT,
     synced_at TIMESTAMP,
@@ -204,16 +176,27 @@ CREATE TABLE assembly (
 );
 
 -- Assembly submitted table
+/*
+CREATE TABLE assembly_outputs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    assembly_id UUID REFERENCES assembly(id),
+    
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+*/
+
+-- Assembly submitted table
 CREATE TABLE assembly_submitted (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     assembly_id UUID REFERENCES assembly(id),
-    assembly_id_serial TEXT NOT NULL,
     organism_id UUID REFERENCES organism(id) NOT NULL,
     sample_id UUID REFERENCES sample(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id),
+    internal_json JSONB,
     submitted_json JSONB,
     submitted_at TIMESTAMP,
-    status TEXT NOT NULL CHECK (status IN ('draft', 'submitted', 'rejected')),
+    status submission_status NOT NULL DEFAULT 'draft',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -222,8 +205,7 @@ CREATE TABLE assembly_submitted (
 CREATE TABLE assembly_fetched (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     assembly_id UUID REFERENCES assembly(id),
-    assembly_id_serial TEXT NOT NULL,
-    assembly_accession_vector TEXT NOT NULL,
+    assembly_accession TEXT NOT NULL,
     organism_id UUID REFERENCES organism(id) NOT NULL,
     sample_id UUID REFERENCES sample(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id),
@@ -240,12 +222,12 @@ CREATE TABLE assembly_fetched (
 -- Main bioproject table
 CREATE TABLE bioproject (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    bioproject_accession_vector TEXT NOT NULL UNIQUE,
-    alias_vector TEXT NOT NULL,
-    alias_vector_md5 TEXT NOT NULL,
-    study_name_vector TEXT NOT NULL,
+    bioproject_accession TEXT NOT NULL UNIQUE,
+    alias TEXT NOT NULL,
+    alias_md5 TEXT NOT NULL,
+    study_name TEXT NOT NULL,
     new_study_type TEXT,
-    study_abstract_vector TEXT,
+    study_abstract TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -255,7 +237,7 @@ CREATE TABLE bioproject_experiment (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     bioproject_id UUID REFERENCES bioproject(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id) NOT NULL,
-    bioproject_accession_vector TEXT NOT NULL,
+    bioproject_accession TEXT NOT NULL,
     experiment_id_serial TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -270,7 +252,7 @@ CREATE TABLE read (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     read_id_serial TEXT NOT NULL UNIQUE,
     experiment_id UUID REFERENCES experiment(id) NOT NULL,
-    dataset_name_vector TEXT NOT NULL,
+    dataset_name TEXT NOT NULL,
     file_name TEXT,
     file_format TEXT,
     file_size BIGINT,
@@ -291,7 +273,7 @@ CREATE TABLE genome_note (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     genome_note_id_serial TEXT NOT NULL UNIQUE,
     organism_id UUID REFERENCES organism(id) NOT NULL,
-    note_vector TEXT,
+    note TEXT,
     other_fields TEXT,
     version_chain_id UUID,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
@@ -317,7 +299,7 @@ CREATE TABLE genome_note_assembly (
 CREATE TABLE bpa_initiative (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     bpa_initiative_id_serial TEXT NOT NULL UNIQUE,
-    name_vector TEXT NOT NULL,
+    name TEXT NOT NULL,
     shipment_accession TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
