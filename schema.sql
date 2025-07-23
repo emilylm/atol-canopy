@@ -105,8 +105,8 @@ CREATE TABLE sample_fetched (
 CREATE TABLE experiment (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sample_id UUID REFERENCES sample(id) NOT NULL,
-    experiment_accession TEXT UNIQUE NOT NULL,
-    run_accession_text UUID UNIQUE NOT NULL,
+    experiment_accession TEXT UNIQUE,
+    run_accession TEXT UNIQUE,
     source_json JSONB,
     -- Denormalised fields from ENA
     run_read_count TEXT,
