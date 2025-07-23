@@ -30,7 +30,9 @@ CREATE TABLE users (
 
 -- Main organism table
 CREATE TABLE organism (
-    tax_id INTEGER PRIMARY KEY NOT NULL,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organism_grouping_key TEXT UNIQUE NOT NULL,
+    tax_id INTEGER NOT NULL,
     scientific_name TEXT,
     common_name TEXT,
     common_name_source TEXT,
@@ -56,7 +58,7 @@ CREATE TABLE organism_bpa (
 -- Main sample table
 CREATE TABLE sample (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organism_tax_id INTEGER REFERENCES organism(tax_id),
+    organism_id UUID REFERENCES organism(id),
     sample_accession TEXT UNIQUE,
     sample_name TEXT UNIQUE NOT NULL,
     -- Denormalised fields from ENA
@@ -76,7 +78,7 @@ CREATE TABLE sample (
 CREATE TABLE sample_submitted (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sample_id UUID REFERENCES sample(id),
-    organism_tax_id INTEGER REFERENCES organism(tax_id),
+    organism_id UUID REFERENCES organism(id),
     internal_json JSONB,
     submitted_json JSONB,
     submitted_at TIMESTAMP,
@@ -90,7 +92,7 @@ CREATE TABLE sample_fetched (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sample_id UUID REFERENCES sample(id),
     sample_accession TEXT NOT NULL,
-    organism_tax_id INTEGER REFERENCES organism(tax_id),
+    organism_id UUID REFERENCES organism(id),
     raw_json JSONB,
     fetched_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -157,7 +159,7 @@ CREATE TABLE experiment_fetched (
 -- Main assembly table
 CREATE TABLE assembly (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organism_tax_id INTEGER REFERENCES organism(tax_id) NOT NULL,
+    organism_id UUID REFERENCES organism(id) NOT NULL,
     sample_id UUID REFERENCES sample(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id),
     assembly_accession TEXT UNIQUE,
@@ -190,7 +192,7 @@ CREATE TABLE assembly_outputs (
 CREATE TABLE assembly_submitted (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     assembly_id UUID REFERENCES assembly(id),
-    organism_tax_id INTEGER REFERENCES organism(tax_id) NOT NULL,
+    organism_id UUID REFERENCES organism(id) NOT NULL,
     sample_id UUID REFERENCES sample(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id),
     internal_json JSONB,
@@ -206,7 +208,7 @@ CREATE TABLE assembly_fetched (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     assembly_id UUID REFERENCES assembly(id),
     assembly_accession TEXT NOT NULL,
-    organism_tax_id INTEGER REFERENCES organism(tax_id) NOT NULL,
+    organism_id UUID REFERENCES organism(id) NOT NULL,
     sample_id UUID REFERENCES sample(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id),
     fetched_json JSONB,
@@ -272,7 +274,7 @@ CREATE TABLE read (
 CREATE TABLE genome_note (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     genome_note_id_serial TEXT NOT NULL UNIQUE,
-    organism_tax_id INTEGER REFERENCES organism(tax_id) NOT NULL,
+    organism_id UUID REFERENCES organism(id) NOT NULL,
     note TEXT,
     other_fields TEXT,
     version_chain_id UUID,
@@ -306,9 +308,9 @@ CREATE TABLE bpa_initiative (
 );
 
 -- Create indexes for common query patterns
-CREATE INDEX idx_organism_tax_id ON organism(tax_id);
-CREATE INDEX idx_sample_organism_tax_id ON sample(organism_tax_id);
+CREATE INDEX idx_organism_id ON organism(id);
+CREATE INDEX idx_sample_organism_id ON sample(organism_id);
 CREATE INDEX idx_experiment_sample_id ON experiment(sample_id);
 CREATE INDEX idx_assembly_sample_id ON assembly(sample_id);
-CREATE INDEX idx_assembly_organism_tax_id ON assembly(organism_tax_id);
+CREATE INDEX idx_assembly_organism_id ON assembly(organism_id);
 CREATE INDEX idx_assembly_experiment_id ON assembly(experiment_id);

@@ -24,8 +24,10 @@ class Organism(Base):
     """
     __tablename__ = "organism"
     
-    tax_id = Column(Integer, unique=True, primary_key=True)
-    scientific_name = Column(Text, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organism_grouping_key = Column(Text, unique=True, nullable=False)
+    tax_id = Column(Integer, nullable=False)
+    scientific_name = Column(Text, nullable=True)
     common_name = Column(Text, nullable=True)
     common_name_source = Column(Text, nullable=True)
     bpa_json = Column(JSONB, nullable=True)

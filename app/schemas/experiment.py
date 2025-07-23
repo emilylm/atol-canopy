@@ -37,7 +37,7 @@ class ExperimentUpdate(BaseModel):
     """Schema for updating an existing experiment."""
     sample_id: Optional[UUID] = None
     experiment_accession: Optional[str] = None
-    run_accession: Optional[UUID] = None
+    run_accession: Optional[str] = None
     source_json: Optional[Dict] = None
     internal_notes: Optional[str] = None
     internal_priority_flag: Optional[str] = None
@@ -76,7 +76,7 @@ class ExperimentSubmittedCreate(ExperimentSubmittedBase):
     """Schema for creating a new experiment submission."""
     experiment_id: Optional[UUID] = None
     experiment_accession: Optional[str] = None
-    run_accession: Optional[UUID] = None
+    run_accession: Optional[str] = None
     internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
@@ -87,7 +87,7 @@ class ExperimentSubmittedUpdate(BaseModel):
     """Schema for updating an existing experiment submission."""
     sample_id: Optional[UUID] = None
     experiment_accession: Optional[str] = None
-    run_accession: Optional[UUID] = None
+    run_accession: Optional[str] = None
     internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     status: Optional[SubmissionStatus] = None
@@ -100,7 +100,7 @@ class ExperimentSubmittedInDBBase(ExperimentSubmittedBase):
     id: UUID
     experiment_id: Optional[UUID] = None
     experiment_accession: Optional[str] = None
-    run_accession: Optional[UUID] = None
+    run_accession: Optional[str] = None
     internal_json: Optional[Dict] = None
     submitted_json: Optional[Dict] = None
     submitted_at: Optional[datetime] = None
@@ -121,7 +121,7 @@ class ExperimentSubmitted(ExperimentSubmittedInDBBase):
 class ExperimentFetchedBase(BaseModel):
     """Base ExperimentFetched schema with common attributes."""
     experiment_accession: str
-    run_accession: UUID
+    run_accession: str
     sample_id: UUID
     fetched_at: datetime
 
