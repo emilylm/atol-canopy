@@ -1,6 +1,6 @@
-# ATOL Biological Metadata Tracking System
+# Canopy: A Metadata Tracking System for the Australian Tree of Life (AToL) data
 
-A FastAPI backend for tracking biological metadata integrated with PostgreSQL.
+Canopy is a FastAPI backend used to track and manage genomic data for the Australian Tree of Life (AToL).
 
 ## Overview
 
@@ -11,7 +11,7 @@ This system manages metadata for core biological entities:
 - Assembly
 - BPA Initiative
 - Bioproject
-- Read
+- Reads
 - Genome Note
 
 The system follows a design pattern with three tables per core entity:
