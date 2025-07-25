@@ -7,20 +7,7 @@ from pydantic import BaseModel, Field
 
 
 # Enum for submission status
-class SubmissionStatus(str, Enum):
-    DRAFT = 'draft'
-    READY = 'ready'
-    SUBMITTED = 'submitted'
-    REJECTED = 'rejected'
-
-
-# Enum for relationship type
-class RelationshipType(str, Enum):
-    DERIVED_FROM = 'derived_from'
-    SUBSAMPLE_OF = 'subsample_of'
-    PARENT_OF = 'parent_of'
-    CHILD_OF = 'child_of'
-
+from app.schemas.common import SubmissionStatus
 
 # Base Sample schema
 class SampleBase(BaseModel):
@@ -147,41 +134,4 @@ class SampleFetchedInDBBase(SampleFetchedBase):
 # Schema for returning sample fetch record information
 class SampleFetched(SampleFetchedInDBBase):
     """Schema for returning sample fetch record information."""
-    pass
-
-
-# Base SampleRelationship schema
-class SampleRelationshipBase(BaseModel):
-    """Base SampleRelationship schema with common attributes."""
-    source_sample_id: UUID
-    target_sample_id: UUID
-    relationship_type: Optional[RelationshipType] = Field(description="Type of relationship between samples")
-
-
-# Schema for creating a new sample relationship
-class SampleRelationshipCreate(SampleRelationshipBase):
-    """Schema for creating a new sample relationship."""
-    pass
-
-
-# Schema for updating an existing sample relationship
-class SampleRelationshipUpdate(BaseModel):
-    """Schema for updating an existing sample relationship."""
-    relationship_type: Optional[RelationshipType] = None
-
-
-# Schema for sample relationship in DB
-class SampleRelationshipInDBBase(SampleRelationshipBase):
-    """Base schema for SampleRelationship in DB, includes id and timestamps."""
-    id: UUID
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-# Schema for returning sample relationship information
-class SampleRelationship(SampleRelationshipInDBBase):
-    """Schema for returning sample relationship information."""
     pass

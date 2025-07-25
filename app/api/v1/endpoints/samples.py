@@ -1,3 +1,5 @@
+import json
+import uuid
 from typing import Any, List, Optional
 from uuid import UUID
 
@@ -6,27 +8,28 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_superuser,
+    get_current_active_superuser,
     get_db,
-    require_role,
+    has_role,
 )
-from app.models.sample import Sample, SampleFetched, SampleRelationship, SampleSubmitted, SubmissionStatus, RelationshipType
+from app.schemas.common import SubmissionStatus
+
+from app.models.sample import Sample, SampleFetched, SampleSubmitted
+
+from app.models.organism import Organism
 from app.models.user import User
 from app.schemas.sample import (
     Sample as SampleSchema,
     SampleCreate,
     SampleFetched as SampleFetchedSchema,
     SampleFetchedCreate,
-    SampleRelationship as SampleRelationshipSchema,
-    SampleRelationshipCreate,
-    SampleRelationshipUpdate,
     SampleSubmitted as SampleSubmittedSchema,
     SampleSubmittedCreate,
     SampleSubmittedUpdate,
     SampleUpdate,
     SubmissionStatus as SchemaSubmissionStatus,
-    RelationshipType as SchemaRelationshipType,
 )
+from app.schemas.bulk_import import BulkSampleImport, BulkImportResponse
 
 router = APIRouter()
 
@@ -62,7 +65,11 @@ def create_sample(
     Create new sample.
     """
     # Only users with 'curator' or 'admin' role can create samples
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     sample = Sample(
         organism_id=sample_in.organism_id,
@@ -107,7 +114,11 @@ def update_sample(
     Update a sample.
     """
     # Only users with 'curator' or 'admin' role can update samples
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     sample = db.query(Sample).filter(Sample.id == sample_id).first()
     if not sample:
@@ -128,7 +139,7 @@ def delete_sample(
     *,
     db: Session = Depends(get_db),
     sample_id: UUID,
-    current_user: User = Depends(get_current_superuser),
+    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete a sample.
@@ -175,7 +186,11 @@ def create_sample_submission(
     Create new sample submission.
     """
     # Only users with 'curator' or 'admin' role can create sample submissions
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     submission = SampleSubmitted(
         sample_id=submission_in.sample_id,
@@ -205,7 +220,11 @@ def update_sample_submission(
     Update a sample submission.
     """
     # Only users with 'curator' or 'admin' role can update sample submissions
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     submission = db.query(SampleSubmitted).filter(SampleSubmitted.id == submission_id).first()
     if not submission:
@@ -248,7 +267,11 @@ def create_sample_fetch(
     Create new sample fetch record.
     """
     # Only users with 'curator' or 'admin' role can create sample fetch records
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     fetch = SampleFetched(
         sample_id=fetch_in.sample_id,
@@ -262,112 +285,76 @@ def create_sample_fetch(
     db.refresh(fetch)
     return fetch
 
-
-# Sample Relationship endpoints
-@router.get("/relationships/", response_model=List[SampleRelationshipSchema])
-def read_sample_relationships(
-    db: Session = Depends(get_db),
-    skip: int = 0,
-    limit: int = 100,
-    source_sample_id: Optional[UUID] = Query(None, description="Filter by source sample ID"),
-    target_sample_id: Optional[UUID] = Query(None, description="Filter by target sample ID"),
-    relationship_type: Optional[SchemaRelationshipType] = Query(None, description="Filter by relationship type"),
-    current_user: User = Depends(get_current_active_user),
-) -> Any:
-    """
-    Retrieve sample relationships.
-    """
-    # All users can read sample relationships
-    query = db.query(SampleRelationship)
-    if source_sample_id:
-        query = query.filter(SampleRelationship.source_sample_id == source_sample_id)
-    if target_sample_id:
-        query = query.filter(SampleRelationship.target_sample_id == target_sample_id)
-    if relationship_type:
-        query = query.filter(SampleRelationship.relationship_type == relationship_type)
-    
-    relationships = query.offset(skip).limit(limit).all()
-    return relationships
-
-
-@router.post("/relationships/", response_model=SampleRelationshipSchema)
-def create_sample_relationship(
+@router.post("/bulk-import", response_model=BulkImportResponse)
+def bulk_import_samples(
     *,
     db: Session = Depends(get_db),
-    relationship_in: SampleRelationshipCreate,
+    samples_data: BulkSampleImport,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
-    Create new sample relationship.
+    Bulk import samples from a dictionary keyed by sample_name.
+    
+    The request body should match the format of the JSON file in data/unique_samples.json.
     """
-    # Only users with 'curator' or 'admin' role can create sample relationships
-    require_role(current_user, ["curator", "admin"])
+    # Only users with 'curator' or 'admin' role can import samples
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
-    # Check if both samples exist
-    source_sample = db.query(Sample).filter(Sample.id == relationship_in.source_sample_id).first()
-    if not source_sample:
-        raise HTTPException(status_code=404, detail="Source sample not found")
+    created_samples_count = 0
+    created_submitted_count = 0
+    skipped_count = 0
     
-    target_sample = db.query(Sample).filter(Sample.id == relationship_in.target_sample_id).first()
-    if not target_sample:
-        raise HTTPException(status_code=404, detail="Target sample not found")
+    for sample_name, sample_data in samples_data.samples.items():
+        # Check if sample already exists
+        existing = db.query(Sample).filter(Sample.sample_name == sample_name).first()
+        if existing:
+            skipped_count += 1
+            continue
+        
+        # Get organism reference from sample data
+        organism_id = None
+        if "organism_grouping_key" in sample_data:
+            organism_grouping_key = sample_data["organism_grouping_key"]
+            # Look up the organism ID by grouping key
+            organism = db.query(Organism).filter(Organism.organism_grouping_key == organism_grouping_key).first()
+            if organism:
+                organism_id = organism.id
+        
+        try:
+            # Create new sample
+            sample_id = uuid.uuid4()
+            sample = Sample(
+                id=sample_id,
+                organism_id=organism_id,
+                sample_name=sample_name,
+                source_json=sample_data
+            )
+            db.add(sample)
+            
+            # Create sample_submitted record
+            sample_submitted = SampleSubmitted(
+                id=uuid.uuid4(),
+                sample_id=sample_id,
+                organism_id=organism_id,
+                internal_json=sample_data
+            )
+            db.add(sample_submitted)
+            
+            db.commit()
+            created_samples_count += 1
+            created_submitted_count += 1
+            
+        except Exception as e:
+            db.rollback()
+            skipped_count += 1
     
-    relationship = SampleRelationship(
-        source_sample_id=relationship_in.source_sample_id,
-        target_sample_id=relationship_in.target_sample_id,
-        relationship_type=relationship_in.relationship_type,
-    )
-    db.add(relationship)
-    db.commit()
-    db.refresh(relationship)
-    return relationship
-
-
-@router.put("/relationships/{relationship_id}", response_model=SampleRelationshipSchema)
-def update_sample_relationship(
-    *,
-    db: Session = Depends(get_db),
-    relationship_id: UUID,
-    relationship_in: SampleRelationshipUpdate,
-    current_user: User = Depends(get_current_active_user),
-) -> Any:
-    """
-    Update a sample relationship.
-    """
-    # Only users with 'curator' or 'admin' role can update sample relationships
-    require_role(current_user, ["curator", "admin"])
-    
-    relationship = db.query(SampleRelationship).filter(SampleRelationship.id == relationship_id).first()
-    if not relationship:
-        raise HTTPException(status_code=404, detail="Sample relationship not found")
-    
-    update_data = relationship_in.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(relationship, field, value)
-    
-    db.add(relationship)
-    db.commit()
-    db.refresh(relationship)
-    return relationship
-
-
-@router.delete("/relationships/{relationship_id}", response_model=SampleRelationshipSchema)
-def delete_sample_relationship(
-    *,
-    db: Session = Depends(get_db),
-    relationship_id: UUID,
-    current_user: User = Depends(get_current_active_user),
-) -> Any:
-    """
-    Delete a sample relationship.
-    """
-    # Only users with 'curator' or 'admin' role can delete sample relationships
-    require_role(current_user, ["curator", "admin"])
-    
-    relationship = db.query(SampleRelationship).filter(SampleRelationship.id == relationship_id).first()
-    if not relationship:
-        raise HTTPException(status_code=404, detail="Sample relationship not found")
-    
-    db.delete(relationship)
-    db.commit()
-    return relationship
+    return {
+        "created_count": created_samples_count,
+        "skipped_count": skipped_count,
+        "message": f"Sample import complete. Created samples: {created_samples_count}, "
+                  f"Created submitted records: {created_submitted_count}, Skipped: {skipped_count}"
+    }

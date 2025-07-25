@@ -76,22 +76,3 @@ class SampleFetched(Base):
     sample = relationship("Sample", backref="fetched_records")
     organism = relationship("Organism")
 
-
-class SampleRelationship(Base):
-    """
-    SampleRelationship model for tracking relationships between samples.
-    
-    This model corresponds to the 'sample_relationship' table in the database.
-    """
-    __tablename__ = "sample_relationship"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    source_sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
-    target_sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
-    relationship_type = Column(SQLAlchemyEnum("derived_from", "subsample_of", "parent_of", "child_of", name="relationship_type"), nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
-    
-    # Relationships
-    source_sample = relationship("Sample", foreign_keys=[source_sample_id], backref="source_relationships")
-    target_sample = relationship("Sample", foreign_keys=[target_sample_id], backref="target_relationships")

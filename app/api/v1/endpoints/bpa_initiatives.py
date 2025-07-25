@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_superuser,
+    get_current_active_superuser,
     get_db,
-    require_role,
+    has_role,
 )
 from app.models.bpa_initiative import BPAInitiative
 from app.models.user import User
@@ -47,7 +47,11 @@ def create_bpa_initiative(
     Create new BPA initiative.
     """
     # Only users with 'curator' or 'admin' role can create BPA initiatives
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     initiative = BPAInitiative(
         bpa_initiative_id_serial=initiative_in.bpa_initiative_id_serial,
@@ -89,7 +93,11 @@ def update_bpa_initiative(
     Update a BPA initiative.
     """
     # Only users with 'curator' or 'admin' role can update BPA initiatives
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     initiative = db.query(BPAInitiative).filter(BPAInitiative.id == initiative_id).first()
     if not initiative:
@@ -110,7 +118,7 @@ def delete_bpa_initiative(
     *,
     db: Session = Depends(get_db),
     initiative_id: UUID,
-    current_user: User = Depends(get_current_superuser),
+    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete a BPA initiative.

@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_superuser,
+    get_current_active_superuser,
     get_db,
-    require_role,
+    has_role,
 )
 from app.models.genome_note import GenomeNote, GenomeNoteAssembly
 from app.models.user import User
@@ -58,7 +58,11 @@ def create_genome_note(
     Create new genome note.
     """
     # Only users with 'curator' or 'admin' role can create genome notes
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     genome_note = GenomeNote(
         organism_id=genome_note_in.organism_id,
@@ -102,7 +106,11 @@ def update_genome_note(
     Update a genome note.
     """
     # Only users with 'curator' or 'admin' role can update genome notes
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     genome_note = db.query(GenomeNote).filter(GenomeNote.id == genome_note_id).first()
     if not genome_note:
@@ -123,7 +131,7 @@ def delete_genome_note(
     *,
     db: Session = Depends(get_db),
     genome_note_id: UUID,
-    current_user: User = Depends(get_current_superuser),
+    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete a genome note.
@@ -173,7 +181,11 @@ def create_genome_note_assembly(
     Create new genome note-assembly relationship.
     """
     # Only users with 'curator' or 'admin' role can create genome note-assembly relationships
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     relationship = GenomeNoteAssembly(
         genome_note_id=relationship_in.genome_note_id,
@@ -197,7 +209,11 @@ def update_genome_note_assembly(
     Update a genome note-assembly relationship.
     """
     # Only users with 'curator' or 'admin' role can update genome note-assembly relationships
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     relationship = db.query(GenomeNoteAssembly).filter(GenomeNoteAssembly.id == relationship_id).first()
     if not relationship:
@@ -224,7 +240,11 @@ def delete_genome_note_assembly(
     Delete a genome note-assembly relationship.
     """
     # Only users with 'curator' or 'admin' role can delete genome note-assembly relationships
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     relationship = db.query(GenomeNoteAssembly).filter(GenomeNoteAssembly.id == relationship_id).first()
     if not relationship:

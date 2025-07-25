@@ -3,8 +3,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.models.sample import Sample, SampleFetched, SampleRelationship, SampleSubmitted
-from app.schemas.sample import SampleCreate, SampleRelationshipCreate, SampleUpdate
+from app.models.sample import Sample, SampleFetched, SampleSubmitted
+from app.schemas.sample import SampleCreate, SampleUpdate
 from app.services.base_service import BaseService
 
 
@@ -63,24 +63,6 @@ class SampleFetchedService(BaseService[SampleFetched, SampleCreate, SampleUpdate
         return db.query(SampleFetched).filter(SampleFetched.sample_id == sample_id).all()
 
 
-class SampleRelationshipService(BaseService[SampleRelationship, SampleRelationshipCreate, SampleRelationshipCreate]):
-    """Service for SampleRelationship operations."""
-    
-    def get_by_sample_id(self, db: Session, sample_id: UUID) -> List[SampleRelationship]:
-        """Get sample relationships by sample ID."""
-        return db.query(SampleRelationship).filter(
-            (SampleRelationship.sample_id == sample_id) | 
-            (SampleRelationship.related_sample_id == sample_id)
-        ).all()
-    
-    def get_by_relationship_type(self, db: Session, relationship_type: str) -> List[SampleRelationship]:
-        """Get sample relationships by relationship type."""
-        return db.query(SampleRelationship).filter(
-            SampleRelationship.relationship_type == relationship_type
-        ).all()
-
-
 sample_service = SampleService(Sample)
 sample_submitted_service = SampleSubmittedService(SampleSubmitted)
 sample_fetched_service = SampleFetchedService(SampleFetched)
-sample_relationship_service = SampleRelationshipService(SampleRelationship)

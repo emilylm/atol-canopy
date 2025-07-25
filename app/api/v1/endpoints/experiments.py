@@ -1,3 +1,5 @@
+import json
+import uuid
 from typing import Any, List, Optional
 from uuid import UUID
 
@@ -6,11 +8,13 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_superuser,
+    get_current_active_superuser,
     get_db,
-    require_role,
+    has_role,
 )
-from app.models.experiment import Experiment, ExperimentFetched, ExperimentSubmitted, SubmissionStatus
+from app.schemas.common import SubmissionStatus
+from app.models.experiment import Experiment, ExperimentFetched, ExperimentSubmitted
+from app.models.sample import Sample
 from app.models.user import User
 from app.schemas.experiment import (
     Experiment as ExperimentSchema,
@@ -23,6 +27,7 @@ from app.schemas.experiment import (
     ExperimentUpdate,
     SubmissionStatus as SchemaSubmissionStatus,
 )
+from app.schemas.bulk_import import BulkExperimentImport, BulkImportResponse
 
 router = APIRouter()
 
@@ -58,7 +63,11 @@ def create_experiment(
     Create new experiment.
     """
     # Only users with 'curator' or 'admin' role can create experiments
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     experiment = Experiment(
         sample_id=experiment_in.sample_id,
@@ -103,7 +112,11 @@ def update_experiment(
     Update an experiment.
     """
     # Only users with 'curator' or 'admin' role can update experiments
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     experiment = db.query(Experiment).filter(Experiment.id == experiment_id).first()
     if not experiment:
@@ -124,7 +137,7 @@ def delete_experiment(
     *,
     db: Session = Depends(get_db),
     experiment_id: UUID,
-    current_user: User = Depends(get_current_superuser),
+    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete an experiment.
@@ -171,7 +184,11 @@ def create_experiment_submission(
     Create new experiment submission.
     """
     # Only users with 'curator' or 'admin' role can create experiment submissions
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     submission = ExperimentSubmitted(
         experiment_id=submission_in.experiment_id,
@@ -201,7 +218,11 @@ def update_experiment_submission(
     Update an experiment submission.
     """
     # Only users with 'curator' or 'admin' role can update experiment submissions
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     submission = db.query(ExperimentSubmitted).filter(ExperimentSubmitted.id == submission_id).first()
     if not submission:
@@ -244,7 +265,11 @@ def create_experiment_fetch(
     Create new experiment fetch record.
     """
     # Only users with 'curator' or 'admin' role can create experiment fetch records
-    require_role(current_user, ["curator", "admin"])
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     fetch = ExperimentFetched(
         experiment_id=fetch_in.experiment_id,
@@ -258,3 +283,81 @@ def create_experiment_fetch(
     db.commit()
     db.refresh(fetch)
     return fetch
+
+
+@router.post("/bulk-import", response_model=BulkImportResponse)
+def bulk_import_experiments(
+    *,
+    db: Session = Depends(get_db),
+    experiments_data: BulkExperimentImport,
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Bulk import experiments from a dictionary keyed by package_id.
+    
+    The request body should match the format of the JSON file in data/experiments.json.
+    """
+    # Only users with 'curator' or 'admin' role can import experiments
+    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    created_experiments_count = 0
+    created_submitted_count = 0
+    skipped_count = 0
+    
+    for package_id, experiment_data in experiments_data.experiments.items():
+        # Check if experiment data contains sample_name
+        if 'sample_name' not in experiment_data:
+            skipped_count += 1
+            continue
+                
+        sample_name = experiment_data['sample_name']
+
+        # Get sample id from sample name
+        sample = db.query(Sample).filter(Sample.sample_name == sample_name).first()
+        if not sample:
+            skipped_count += 1
+            continue
+
+        try:
+            # Check if experiment already exists with this package_id
+            existing = db.query(Experiment).filter(Experiment.bpa_package_id == package_id).first()
+            if existing:
+                skipped_count += 1
+                continue
+                
+            # Create new experiment
+            experiment_id = uuid.uuid4()
+            experiment = Experiment(
+                id=experiment_id,
+                sample_id=sample.id,
+                bpa_package_id=package_id
+            )
+            db.add(experiment)
+            
+            # Create experiment_submitted record
+            experiment_submitted = ExperimentSubmitted(
+                id=uuid.uuid4(),
+                experiment_id=experiment_id,
+                sample_id=sample.id,
+                internal_json=experiment_data
+            )
+            db.add(experiment_submitted)
+            
+            db.commit()
+            created_experiments_count += 1
+            created_submitted_count += 1
+            
+        except Exception as e:
+            db.rollback()
+            skipped_count += 1
+    
+    return {
+        "created_count": created_experiments_count,
+        "skipped_count": skipped_count,
+        "message": f"Experiment import complete. Created experiments: {created_experiments_count}, "
+                  f"Created submitted records: {created_submitted_count}, Skipped: {skipped_count}"
+    }

@@ -5,14 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-
-# Enum for submission status
-class SubmissionStatus(str, Enum):
-    DRAFT = 'draft'
-    READY = 'ready'
-    SUBMITTED = 'submitted'
-    REJECTED = 'rejected'
-
+from app.schemas.common import SubmissionStatus
 
 # Base Assembly schema
 class AssemblyBase(BaseModel):
