@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, Text, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -25,8 +25,8 @@ class Assembly(Base):
     internal_notes = Column(Text, nullable=True)
     synced_at = Column(DateTime, nullable=True)
     last_checked_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     organism = relationship("Organism", backref="assemblies")
@@ -51,8 +51,8 @@ class AssemblySubmitted(Base):
     submitted_json = Column(JSONB, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
     status = Column(SQLAlchemyEnum("draft", "ready", "submitted", "rejected", name="submission_status"), nullable=False, default="draft")
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     assembly = relationship("Assembly", backref="submitted_records")
@@ -77,8 +77,8 @@ class AssemblyFetched(Base):
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=True)
     fetched_json = Column(JSONB, nullable=True)
     fetched_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     assembly = relationship("Assembly", backref="fetched_records")

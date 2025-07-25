@@ -1,19 +1,10 @@
 import uuid
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Integer, String, Text, Enum as SQLAlchemyEnum
+from sqlalchemy import Column, DateTime, Integer, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from app.db.session import Base
-
-
-# Enum for submission status
-class SubmissionStatus(str):
-    DRAFT = 'draft'
-    READY = 'ready'
-    SUBMITTED = 'submitted'
-    REJECTED = 'rejected'
 
 
 class Organism(Base):
@@ -32,5 +23,5 @@ class Organism(Base):
     common_name_source = Column(Text, nullable=True)
     bpa_json = Column(JSONB, nullable=True)
     taxonomy_lineage_json = Column(JSONB, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))

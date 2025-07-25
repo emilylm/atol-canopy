@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, Text, Boolean
 from sqlalchemy.dialects.postgresql import UUID
@@ -22,8 +22,8 @@ class GenomeNote(Base):
     other_fields = Column(Text, nullable=True)
     version_chain_id = Column(UUID(as_uuid=True), nullable=True)
     is_published = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     organism = relationship("Organism", backref="genome_notes")
@@ -40,8 +40,8 @@ class GenomeNoteAssembly(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     genome_note_id = Column(UUID(as_uuid=True), ForeignKey("genome_note.id"), nullable=False)
     assembly_id = Column(UUID(as_uuid=True), ForeignKey("assembly.id"), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     genome_note = relationship("GenomeNote", backref="genome_note_assemblies")

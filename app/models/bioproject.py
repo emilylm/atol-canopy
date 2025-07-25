@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -23,8 +23,8 @@ class Bioproject(Base):
     study_name = Column(Text, nullable=False)
     new_study_type = Column(Text, nullable=True)
     study_abstract = Column(Text, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
 
 class BioprojectExperiment(Base):
@@ -39,8 +39,8 @@ class BioprojectExperiment(Base):
     bioproject_id = Column(UUID(as_uuid=True), ForeignKey("bioproject.id"), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=False)
     bioproject_accession = Column(Text, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     bioproject = relationship("Bioproject", backref="bioproject_experiments")

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, Text, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -25,8 +25,8 @@ class Sample(Base):
     internal_priority_flag = Column(Text, nullable=True)
     synced_at = Column(DateTime, nullable=True)
     last_checked_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     organism = relationship("Organism", backref="samples")
@@ -47,8 +47,8 @@ class SampleSubmitted(Base):
     submitted_json = Column(JSONB, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
     status = Column(SQLAlchemyEnum("draft", "ready", "submitted", "rejected", name="submission_status"), nullable=False, default="draft")
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     sample = relationship("Sample", backref="submitted_records")
@@ -69,8 +69,8 @@ class SampleFetched(Base):
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=True)
     raw_json = Column(JSONB, nullable=True)
     fetched_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     sample = relationship("Sample", backref="fetched_records")
@@ -89,8 +89,8 @@ class SampleRelationship(Base):
     source_sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
     target_sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
     relationship_type = Column(SQLAlchemyEnum("derived_from", "subsample_of", "parent_of", "child_of", name="relationship_type"), nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     source_sample = relationship("Sample", foreign_keys=[source_sample_id], backref="source_relationships")
