@@ -4,11 +4,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app.schemas.common import SubmissionStatus
 
 from app.core.dependencies import (
     get_current_active_user,
+    get_current_superuser,
     get_db,
+    require_role,
 )
 from app.models.organism import Organism
 from app.models.user import User
@@ -16,7 +17,6 @@ from app.schemas.organism import (
     Organism as OrganismSchema,
     OrganismCreate,
     OrganismUpdate,
-    SubmissionStatus as SchemaSubmissionStatus,
 )
 from app.schemas.bulk_import import BulkOrganismImport, BulkImportResponse
 
@@ -49,11 +49,7 @@ def create_organism(
     Create new organism.
     """
     # Only users with 'curator' or 'admin' role can create organisms
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     organism = Organism(
         tax_id=organism_in.tax_id,
@@ -98,11 +94,7 @@ def update_organism(
     Update an organism.
     """
     # Only users with 'curator' or 'admin' role can update organisms
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     organism = db.query(Organism).filter(Organism.id == organism_id).first()
     if not organism:
@@ -123,6 +115,7 @@ def delete_organism(
     *,
     db: Session = Depends(get_db),
     organism_id: UUID,
+    current_user: User = Depends(get_current_superuser),
 ) -> Any:
     """
     Delete an organism.
@@ -150,11 +143,7 @@ def bulk_import_organisms(
     The request body should match the format of the JSON file in data/unique_organisms.json.
     """
     # Only users with 'curator' or 'admin' role can import organisms
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     created_count = 0
     skipped_count = 0

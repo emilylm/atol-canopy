@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
+    get_current_superuser,
     get_db,
+    require_role,
 )
 from app.models.bioproject import Bioproject, BioprojectExperiment
 from app.models.user import User
@@ -47,11 +49,7 @@ def create_bioproject(
     Create new bioproject.
     """
     # Only users with 'curator' or 'admin' role can create bioprojects
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     bioproject = Bioproject(
         bioproject_accession=bioproject_in.bioproject_accession,
@@ -96,11 +94,7 @@ def update_bioproject(
     Update a bioproject.
     """
     # Only users with 'curator' or 'admin' role can update bioprojects
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     bioproject = db.query(Bioproject).filter(Bioproject.id == bioproject_id).first()
     if not bioproject:
@@ -121,6 +115,7 @@ def delete_bioproject(
     *,
     db: Session = Depends(get_db),
     bioproject_id: UUID,
+    current_user: User = Depends(get_current_superuser),
 ) -> Any:
     """
     Delete a bioproject.
@@ -170,11 +165,7 @@ def create_bioproject_experiment(
     Create new bioproject-experiment relationship.
     """
     # Only users with 'curator' or 'admin' role can create bioproject-experiment relationships
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     relationship = BioprojectExperiment(
         bioproject_id=relationship_in.bioproject_id,
@@ -199,11 +190,7 @@ def delete_bioproject_experiment(
     Delete a bioproject-experiment relationship.
     """
     # Only users with 'curator' or 'admin' role can delete bioproject-experiment relationships
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     relationship = db.query(BioprojectExperiment).filter(BioprojectExperiment.id == relationship_id).first()
     if not relationship:

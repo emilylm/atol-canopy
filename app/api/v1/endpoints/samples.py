@@ -8,12 +8,11 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
+    get_current_superuser,
     get_db,
+    require_role,
 )
-from app.schemas.common import SubmissionStatus
-
 from app.models.sample import Sample, SampleFetched, SampleSubmitted
-
 from app.models.organism import Organism
 from app.models.user import User
 from app.schemas.sample import (
@@ -63,11 +62,7 @@ def create_sample(
     Create new sample.
     """
     # Only users with 'curator' or 'admin' role can create samples
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     sample = Sample(
         organism_id=sample_in.organism_id,
@@ -112,11 +107,7 @@ def update_sample(
     Update a sample.
     """
     # Only users with 'curator' or 'admin' role can update samples
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     sample = db.query(Sample).filter(Sample.id == sample_id).first()
     if not sample:
@@ -137,6 +128,7 @@ def delete_sample(
     *,
     db: Session = Depends(get_db),
     sample_id: UUID,
+    current_user: User = Depends(get_current_superuser),
 ) -> Any:
     """
     Delete a sample.
@@ -183,11 +175,7 @@ def create_sample_submission(
     Create new sample submission.
     """
     # Only users with 'curator' or 'admin' role can create sample submissions
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     submission = SampleSubmitted(
         sample_id=submission_in.sample_id,
@@ -217,11 +205,7 @@ def update_sample_submission(
     Update a sample submission.
     """
     # Only users with 'curator' or 'admin' role can update sample submissions
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     submission = db.query(SampleSubmitted).filter(SampleSubmitted.id == submission_id).first()
     if not submission:
@@ -264,11 +248,7 @@ def create_sample_fetch(
     Create new sample fetch record.
     """
     # Only users with 'curator' or 'admin' role can create sample fetch records
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     fetch = SampleFetched(
         sample_id=fetch_in.sample_id,
@@ -295,11 +275,7 @@ def bulk_import_samples(
     The request body should match the format of the JSON file in data/unique_samples.json.
     """
     # Only users with 'curator' or 'admin' role can import samples
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     created_samples_count = 0
     created_submitted_count = 0

@@ -6,16 +6,13 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_active_superuser,
+    get_current_superuser,
     get_db,
-    has_role,
+    require_role,
 )
-from app.schemas.common import SubmissionStatus
-
-
 from app.models.assembly import Assembly, AssemblyFetched, AssemblySubmitted
+from app.schemas.common import SubmissionStatus
 from app.models.user import User
-
 from app.schemas.assembly import (
     Assembly as AssemblySchema,
     AssemblyCreate,
@@ -68,11 +65,7 @@ def create_assembly(
     Create new assembly.
     """
     # Only users with 'curator' or 'admin' role can create assemblies
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     assembly = Assembly(
         organism_id=assembly_in.organism_id,
@@ -117,11 +110,7 @@ def update_assembly(
     Update an assembly.
     """
     # Only users with 'curator' or 'admin' role can update assemblies
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     assembly = db.query(Assembly).filter(Assembly.id == assembly_id).first()
     if not assembly:
@@ -142,6 +131,7 @@ def delete_assembly(
     *,
     db: Session = Depends(get_db),
     assembly_id: UUID,
+    current_user: User = Depends(get_current_superuser),
 ) -> Any:
     """
     Delete an assembly.
@@ -188,11 +178,7 @@ def create_assembly_submission(
     Create new assembly submission.
     """
     # Only users with 'curator' or 'admin' role can create assembly submissions
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     submission = AssemblySubmitted(
         assembly_id=submission_in.assembly_id,
@@ -223,11 +209,7 @@ def update_assembly_submission(
     Update an assembly submission.
     """
     # Only users with 'curator' or 'admin' role can update assembly submissions
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     submission = db.query(AssemblySubmitted).filter(AssemblySubmitted.id == submission_id).first()
     if not submission:
@@ -270,11 +252,7 @@ def create_assembly_fetch(
     Create new assembly fetch record.
     """
     # Only users with 'curator' or 'admin' role can create assembly fetch records
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     fetch = AssemblyFetched(
         assembly_id=fetch_in.assembly_id,

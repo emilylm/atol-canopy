@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
+    get_current_superuser,
     get_db,
+    require_role,
 )
 from app.models.read import Read
 from app.models.user import User
@@ -50,11 +52,7 @@ def create_read(
     Create new read.
     """
     # Only users with 'curator' or 'admin' role can create reads
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     read = Read(
         experiment_id=read_in.experiment_id,
@@ -102,11 +100,7 @@ def update_read(
     Update a read.
     """
     # Only users with 'curator' or 'admin' role can update reads
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     read = db.query(Read).filter(Read.id == read_id).first()
     if not read:
@@ -127,6 +121,7 @@ def delete_read(
     *,
     db: Session = Depends(get_db),
     read_id: UUID,
+    current_user: User = Depends(get_current_superuser),
 ) -> Any:
     """
     Delete a read.

@@ -8,10 +8,12 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
+    get_current_superuser,
     get_db,
+    require_role,
 )
-from app.schemas.common import SubmissionStatus
 from app.models.experiment import Experiment, ExperimentFetched, ExperimentSubmitted
+from app.schemas.common import SubmissionStatus
 from app.models.sample import Sample
 from app.models.user import User
 from app.schemas.experiment import (
@@ -61,11 +63,7 @@ def create_experiment(
     Create new experiment.
     """
     # Only users with 'curator' or 'admin' role can create experiments
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     experiment = Experiment(
         sample_id=experiment_in.sample_id,
@@ -110,11 +108,7 @@ def update_experiment(
     Update an experiment.
     """
     # Only users with 'curator' or 'admin' role can update experiments
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     experiment = db.query(Experiment).filter(Experiment.id == experiment_id).first()
     if not experiment:
@@ -135,6 +129,7 @@ def delete_experiment(
     *,
     db: Session = Depends(get_db),
     experiment_id: UUID,
+    current_user: User = Depends(get_current_superuser),
 ) -> Any:
     """
     Delete an experiment.
@@ -181,11 +176,7 @@ def create_experiment_submission(
     Create new experiment submission.
     """
     # Only users with 'curator' or 'admin' role can create experiment submissions
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     submission = ExperimentSubmitted(
         experiment_id=submission_in.experiment_id,
@@ -215,11 +206,7 @@ def update_experiment_submission(
     Update an experiment submission.
     """
     # Only users with 'curator' or 'admin' role can update experiment submissions
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     submission = db.query(ExperimentSubmitted).filter(ExperimentSubmitted.id == submission_id).first()
     if not submission:
@@ -262,11 +249,7 @@ def create_experiment_fetch(
     Create new experiment fetch record.
     """
     # Only users with 'curator' or 'admin' role can create experiment fetch records
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     fetch = ExperimentFetched(
         experiment_id=fetch_in.experiment_id,
@@ -295,11 +278,7 @@ def bulk_import_experiments(
     The request body should match the format of the JSON file in data/experiments.json.
     """
     # Only users with 'curator' or 'admin' role can import experiments
-    if not ("curator" in current_user.roles or "admin" in current_user.roles or current_user.is_superuser):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+    require_role(current_user, ["curator", "admin"])
     
     created_experiments_count = 0
     created_submitted_count = 0
