@@ -142,7 +142,6 @@ def delete_assembly(
     *,
     db: Session = Depends(get_db),
     assembly_id: UUID,
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete an assembly.

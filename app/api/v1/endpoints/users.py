@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_active_superuser, get_current_active_user
+from app.core.dependencies import get_current_active_user
 from app.core.security import get_password_hash
 from app.db.session import get_db
 from app.models.user import User
@@ -18,7 +18,6 @@ def read_users(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Retrieve users.
@@ -41,7 +40,6 @@ def create_user(
     *,
     db: Session = Depends(get_db),
     user_in: UserCreate,
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Create new user.
@@ -142,7 +140,6 @@ def update_user_me(
 def read_user_by_id(
     user_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Get a specific user by id.
@@ -173,7 +170,6 @@ def update_user(
     db: Session = Depends(get_db),
     user_id: UUID,
     user_in: UserUpdate,
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Update a user.

@@ -6,9 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_active_superuser,
     get_db,
-    has_role,
 )
 from app.models.bioproject import Bioproject, BioprojectExperiment
 from app.models.user import User
@@ -123,7 +121,6 @@ def delete_bioproject(
     *,
     db: Session = Depends(get_db),
     bioproject_id: UUID,
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete a bioproject.

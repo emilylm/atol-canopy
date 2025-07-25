@@ -8,9 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_active_superuser,
     get_db,
-    has_role,
 )
 from app.schemas.common import SubmissionStatus
 from app.models.experiment import Experiment, ExperimentFetched, ExperimentSubmitted
@@ -137,7 +135,6 @@ def delete_experiment(
     *,
     db: Session = Depends(get_db),
     experiment_id: UUID,
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete an experiment.

@@ -6,9 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_active_superuser,
     get_db,
-    has_role,
 )
 from app.models.bpa_initiative import BPAInitiative
 from app.models.user import User
@@ -118,7 +116,6 @@ def delete_bpa_initiative(
     *,
     db: Session = Depends(get_db),
     initiative_id: UUID,
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete a BPA initiative.

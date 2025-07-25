@@ -8,9 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_active_superuser,
     get_db,
-    has_role,
 )
 from app.schemas.common import SubmissionStatus
 
@@ -139,7 +137,6 @@ def delete_sample(
     *,
     db: Session = Depends(get_db),
     sample_id: UUID,
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete a sample.

@@ -6,9 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_active_superuser,
     get_db,
-    has_role,
 )
 from app.models.read import Read
 from app.models.user import User
@@ -129,7 +127,6 @@ def delete_read(
     *,
     db: Session = Depends(get_db),
     read_id: UUID,
-    current_user: User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Delete a read.
