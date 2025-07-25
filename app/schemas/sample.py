@@ -15,9 +15,6 @@ class SampleBase(BaseModel):
     organism_id: Optional[UUID] = None
     sample_accession: Optional[str] = None
     sample_name: Optional[str] = None
-    internal_notes: Optional[str] = None
-    internal_priority_flag: Optional[str] = None
-
 
 # Schema for creating a new sample
 class SampleCreate(SampleBase):
@@ -32,9 +29,6 @@ class SampleUpdate(BaseModel):
     sample_accession: Optional[str] = None
     sample_name: Optional[str] = None
     source_json: Optional[Dict] = None
-    internal_notes: Optional[str] = None
-    internal_priority_flag: Optional[str] = None
-
 
 # Schema for sample in DB
 class SampleInDBBase(SampleBase):

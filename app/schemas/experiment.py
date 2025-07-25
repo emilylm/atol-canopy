@@ -18,10 +18,8 @@ class SubmissionStatus(str, Enum):
 class ExperimentBase(BaseModel):
     """Base Experiment schema with common attributes."""
     sample_id: UUID
-    experiment_accession: str
-    run_accession: UUID
-    internal_notes: Optional[str] = None
-    internal_priority_flag: Optional[str] = None
+    experiment_accession: Optional[str]
+    run_accession: Optional[str]
     # BPA fields
     bpa_package_id: str
 
@@ -39,8 +37,6 @@ class ExperimentUpdate(BaseModel):
     experiment_accession: Optional[str] = None
     run_accession: Optional[str] = None
     source_json: Optional[Dict] = None
-    internal_notes: Optional[str] = None
-    internal_priority_flag: Optional[str] = None
     bpa_package_id: Optional[str] = None
 
 
