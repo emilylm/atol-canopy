@@ -21,8 +21,6 @@ class Sample(Base):
     sample_accession = Column(Text, unique=True, nullable=True)
     sample_name = Column(Text, unique=True, nullable=False)
     source_json = Column(JSONB, nullable=True)
-    internal_notes = Column(Text, nullable=True)
-    internal_priority_flag = Column(Text, nullable=True)
     synced_at = Column(DateTime, nullable=True)
     last_checked_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
