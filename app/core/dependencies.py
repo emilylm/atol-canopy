@@ -79,6 +79,56 @@ def get_current_active_user(
         )
     return current_user
 
+def get_current_active_superuser(
+    current_user: Annotated[User, Depends(get_current_user)]
+) -> User:
+    """
+    Get the current active superuser.
+    
+    Args:
+        current_user: Current user
+        
+    Returns:
+        User: Current active superuser
+        
+    Raises:
+        HTTPException: If user is not a superuser
+    """
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user doesn't have enough privileges",
+        )
+    return current_user
+
+
+# Alias for get_current_active_superuser for backward compatibility
+get_current_superuser = get_current_active_superuser
+
+
+def require_role(current_user: User, required_roles: List[str]) -> None:
+    """
+    Check if the user has the required roles.
+    
+    Args:
+        current_user: Current user
+        required_roles: List of required roles
+        
+    Raises:
+        HTTPException: If user doesn't have the required roles
+    """
+    if current_user.is_superuser:
+        return
+        
+    for role in required_roles:
+        if role in current_user.roles:
+            return
+            
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="The user doesn't have the required roles",
+    )
+
 def has_role(required_roles: List[str]):
     """
     Check if the user has the required roles.
