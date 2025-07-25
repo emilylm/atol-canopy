@@ -239,11 +239,7 @@ CREATE TABLE bioproject_experiment (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     bioproject_id UUID REFERENCES bioproject(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id) NOT NULL,
-    bioproject_accession TEXT NOT NULL,
-    experiment_id_serial TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    CONSTRAINT unique_bioproject_experiment UNIQUE (bioproject_id, experiment_id)
+    PRIMARY KEY (bioproject_id, experiment_id)
 );
 
 -- ==========================================
@@ -288,10 +284,7 @@ CREATE TABLE genome_note_assembly (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     genome_note_id UUID REFERENCES genome_note(id) NOT NULL,
     assembly_id UUID REFERENCES assembly(id) NOT NULL,
-    genome_note_id_serial TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    CONSTRAINT unique_genome_note_assembly UNIQUE (genome_note_id, assembly_id)
+    PRIMARY KEY (genome_note_id, assembly_id)
 );
 
 -- ==========================================
@@ -300,7 +293,6 @@ CREATE TABLE genome_note_assembly (
 
 CREATE TABLE bpa_initiative (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    bpa_initiative_id_serial TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     shipment_accession TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),

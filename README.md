@@ -23,6 +23,7 @@ The system follows a design pattern with three tables per core entity:
 
 - JWT-based authentication with role-based access control
 - RESTful API endpoints for all core biological entities
+- Bulk import API endpoints for organisms, samples, and experiments
 - PostgreSQL database with UUID primary keys and JSONB fields
 - Docker and Docker Compose deployment
 
@@ -98,6 +99,32 @@ app/
 ```bash
 docker-compose up -d
 ```
+
+## Bulk Import API
+
+The system provides API endpoints for bulk importing organisms, samples, and experiments. These endpoints allow you to import data in the same format as the standalone import script but through authenticated API calls.
+
+### Bulk Import Endpoints
+
+- `/api/v1/organisms/bulk-import` - Bulk import organisms
+- `/api/v1/samples/bulk-import` - Bulk import samples
+- `/api/v1/experiments/bulk-import` - Bulk import experiments
+
+All bulk import endpoints:
+- Require authentication with 'curator' or 'admin' role
+- Accept JSON data in the same format as the standalone import script
+- Return counts of created and skipped records
+
+### Example Client
+
+An example Python client for the bulk import API is available in `examples/bulk_import_client.py`.
+
+```bash
+# Import all data from default locations
+python examples/bulk_import_client.py --username admin --password password --all
+```
+
+For detailed documentation on the bulk import API, see `docs/bulk_import_api.md`.
 
 4. Access the API documentation at http://localhost:8000/docs
 

@@ -14,11 +14,11 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     
     # Database
-    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_SERVER: str = "db"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "atol_database"
-    POSTGRES_PORT: str = "5432"
+    POSTGRES_DB: str = "atol_db"
+    POSTGRES_PORT: str = "5433"
     DATABASE_URI: Optional[str] = None
     
     # Security

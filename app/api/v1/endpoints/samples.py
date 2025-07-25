@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -69,8 +69,6 @@ def create_sample(
         sample_name=sample_in.sample_name,
         sample_accession=sample_in.sample_accession,
         source_json=sample_in.source_json,
-        internal_notes=sample_in.internal_notes,
-        internal_priority_flag=sample_in.internal_priority_flag,
     )
     db.add(sample)
     db.commit()
@@ -266,13 +264,14 @@ def create_sample_fetch(
 def bulk_import_samples(
     *,
     db: Session = Depends(get_db),
-    samples_data: BulkSampleImport,
+    samples_data: Dict[str, Dict[str, Any]],  # Accept direct dictionary format from unique_samples.json
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     Bulk import samples from a dictionary keyed by sample_name.
     
-    The request body should match the format of the JSON file in data/unique_samples.json.
+    The request body should directly match the format of the JSON file in data/unique_samples.json,
+    which is a dictionary keyed by sample_name without a wrapping 'samples' key.
     """
     # Only users with 'curator' or 'admin' role can import samples
     require_role(current_user, ["curator", "admin"])
@@ -281,7 +280,7 @@ def bulk_import_samples(
     created_submitted_count = 0
     skipped_count = 0
     
-    for sample_name, sample_data in samples_data.samples.items():
+    for sample_name, sample_data in samples_data.items():
         # Check if sample already exists
         existing = db.query(Sample).filter(Sample.sample_name == sample_name).first()
         if existing:

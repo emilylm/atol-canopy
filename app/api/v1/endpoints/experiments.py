@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -70,8 +70,6 @@ def create_experiment(
         experiment_accession=experiment_in.experiment_accession,
         run_accession=experiment_in.run_accession,
         source_json=experiment_in.source_json,
-        internal_notes=experiment_in.internal_notes,
-        internal_priority_flag=experiment_in.internal_priority_flag,
     )
     db.add(experiment)
     db.commit()
@@ -269,13 +267,14 @@ def create_experiment_fetch(
 def bulk_import_experiments(
     *,
     db: Session = Depends(get_db),
-    experiments_data: BulkExperimentImport,
+    experiments_data: Dict[str, Dict[str, Any]],  # Accept direct dictionary format from experiments.json
     current_user: User = Depends(get_current_active_user),
-) -> Any:
+) -> BulkImportResponse:
     """
     Bulk import experiments from a dictionary keyed by package_id.
     
-    The request body should match the format of the JSON file in data/experiments.json.
+    The request body should directly match the format of the JSON file in data/experiments.json,
+    which is a dictionary keyed by package_id without a wrapping 'experiments' key.
     """
     # Only users with 'curator' or 'admin' role can import experiments
     require_role(current_user, ["curator", "admin"])

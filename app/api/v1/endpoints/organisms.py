@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, List, Optional
+from typing import Any, List, Dict, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -134,13 +134,14 @@ def delete_organism(
 def bulk_import_organisms(
     *,
     db: Session = Depends(get_db),
-    organisms_data: BulkOrganismImport,
+    organisms_data: Dict[str, Dict[str, Any]],  # Accept direct dictionary format from unique_organisms.json
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     Bulk import organisms from a dictionary keyed by organism_grouping_key.
     
-    The request body should match the format of the JSON file in data/unique_organisms.json.
+    The request body should directly match the format of the JSON file in data/unique_organisms.json,
+    which is a dictionary keyed by organism_grouping_key without a wrapping 'organisms' key.
     """
     # Only users with 'curator' or 'admin' role can import organisms
     require_role(current_user, ["curator", "admin"])
@@ -148,7 +149,7 @@ def bulk_import_organisms(
     created_count = 0
     skipped_count = 0
     
-    for organism_grouping_key, organism_data in organisms_data.organisms.items():
+    for organism_grouping_key, organism_data in organisms_data.items():
         # Extract tax_id from the organism data
         if "taxon_id" in organism_data:
             tax_id = organism_data["taxon_id"]
