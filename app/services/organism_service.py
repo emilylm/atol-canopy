@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.models.organism import Organism, OrganismFetched, OrganismSubmitted
+from app.models.organism import Organism
 from app.schemas.organism import OrganismCreate, OrganismUpdate
 from app.services.base_service import BaseService
 
@@ -37,22 +37,4 @@ class OrganismService(BaseService[Organism, OrganismCreate, OrganismUpdate]):
         return query.offset(skip).limit(limit).all()
 
 
-class OrganismSubmittedService(BaseService[OrganismSubmitted, OrganismCreate, OrganismUpdate]):
-    """Service for OrganismSubmitted operations."""
-    
-    def get_by_organism_id(self, db: Session, organism_id: UUID) -> List[OrganismSubmitted]:
-        """Get submitted organisms by organism ID."""
-        return db.query(OrganismSubmitted).filter(OrganismSubmitted.organism_id == organism_id).all()
-
-
-class OrganismFetchedService(BaseService[OrganismFetched, OrganismCreate, OrganismUpdate]):
-    """Service for OrganismFetched operations."""
-    
-    def get_by_organism_id(self, db: Session, organism_id: UUID) -> List[OrganismFetched]:
-        """Get fetched organisms by organism ID."""
-        return db.query(OrganismFetched).filter(OrganismFetched.organism_id == organism_id).all()
-
-
 organism_service = OrganismService(Organism)
-organism_submitted_service = OrganismSubmittedService(OrganismSubmitted)
-organism_fetched_service = OrganismFetchedService(OrganismFetched)
