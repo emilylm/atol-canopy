@@ -17,6 +17,10 @@ import os
 from pathlib import Path
 import psycopg2
 import psycopg2.extras
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 # Get database parameters from environment variables
 def get_db_params():
@@ -53,9 +57,6 @@ def import_organisms(conn, organisms_data):
     
     cursor = conn.cursor()
     
-    # Dictionary to store organism IDs for later reference
-    organism_id_map = {}
-    
     for organism_grouping_key, organism_data in organisms_data.items():
         # Extract tax_id from the organism data
         if "taxon_id" in organism_data:
@@ -70,7 +71,6 @@ def import_organisms(conn, organisms_data):
         existing = cursor.fetchone()
         if existing:
             print(f"Organism with grouping key {organism_grouping_key} already exists, skipping.")
-            organism_id_map[tax_id] = existing[0]  # Store the UUID for later reference
             skipped_count += 1
             continue
         
@@ -84,11 +84,10 @@ def import_organisms(conn, organisms_data):
         try:
             # Generate UUID for organism
             organism_id = str(uuid.uuid4())
-            
             cursor.execute(
                 """
-                INSERT INTO organism (id, organism_grouping_key, tax_id, scientific_name, common_name, bpa_json)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO organism (id, organism_grouping_key, tax_id, scientific_name, bpa_json)
+                VALUES (%s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -96,16 +95,9 @@ def import_organisms(conn, organisms_data):
                     organism_grouping_key,
                     tax_id,
                     scientific_name,
-                    organism_data.get("common_name"),
                     json.dumps(organism_data)
                 )
             )
-            
-            # Get the inserted organism ID and store it for later reference
-            result = cursor.fetchone()
-            if result:
-                organism_id = result[0]
-                organism_id_map[tax_id] = organism_id
             
             conn.commit()
             created_count += 1
@@ -117,19 +109,16 @@ def import_organisms(conn, organisms_data):
             skipped_count += 1
     
     print(f"Organism import complete. Created: {created_count}, Skipped: {skipped_count}")
-    # Return the mapping of tax_ids to organism UUIDs
-    return created_count, organism_id_map
+    return created_count
 
 
-def import_samples(conn, samples_data, sample_package_map, organism_id_map):
+def import_samples(conn, samples_data):
     """
     Import sample data into the database.
     
     Args:
         conn: Database connection
         samples_data: Dictionary of sample data keyed by sample_name
-        sample_package_map: Dictionary mapping sample names to experiment packages
-        organism_id_map: Dictionary mapping tax_ids to organism UUIDs
     """
     print(f"Importing {len(samples_data)} samples...")
     
@@ -139,16 +128,12 @@ def import_samples(conn, samples_data, sample_package_map, organism_id_map):
     
     cursor = conn.cursor()
     
-    # Dictionary to store sample IDs for later reference
-    sample_id_map = {}
-    
     for sample_name, sample_data in samples_data.items():
         # Check if sample already exists
         cursor.execute("SELECT id FROM sample WHERE sample_name = %s", (sample_name,))
         existing = cursor.fetchone()
         if existing:
             print(f"Sample with name {sample_name} already exists, skipping.")
-            sample_id_map[sample_name] = existing[0]  # Store the UUID for later reference
             skipped_count += 1
             continue
         
@@ -180,13 +165,8 @@ def import_samples(conn, samples_data, sample_package_map, organism_id_map):
                     json.dumps(sample_data)
                 )
             )
-            
-            # Store the sample ID for later reference
-            result = cursor.fetchone()
-            if result:
-                sample_id = result[0]
-                sample_id_map[sample_name] = sample_id
-            
+
+
             # Create sample_submitted record
             cursor.execute(
                 """
@@ -215,18 +195,16 @@ def import_samples(conn, samples_data, sample_package_map, organism_id_map):
     
     print(f"Sample import complete. Created samples: {created_samples_count}, "
           f"Created submitted records: {created_submitted_count}, Skipped: {skipped_count}")
-    return created_samples_count, sample_id_map
+    return created_samples_count
 
 
-def import_experiments(conn, experiments_data, sample_package_map, sample_id_map):
+def import_experiments(conn, experiments_data):
     """
     Import experiment data into the database.
     
     Args:
         conn: Database connection
         experiments_data: Dictionary of experiment data keyed by package_id
-        sample_package_map: Dictionary mapping sample names to experiment packages
-        sample_id_map: Dictionary mapping sample names to sample UUIDs
     """
     print(f"Importing experiments from {len(experiments_data)} experiment packages...")
     
@@ -236,104 +214,73 @@ def import_experiments(conn, experiments_data, sample_package_map, sample_id_map
     
     cursor = conn.cursor()
     
-    # Create a reverse mapping from package_id to sample_name
-    package_to_sample = {}
-    for sample_name, package_ids in sample_package_map.items():
-        for package_id in package_ids:
-            if package_id in package_to_sample:
-                package_to_sample[package_id].append(sample_name)
-            else:
-                package_to_sample[package_id] = [sample_name]
-    
     for package_id, experiment_data in experiments_data.items():
-        # Skip if no associated sample
-        if package_id not in package_to_sample:
-            print(f"No sample found for experiment package {package_id}, skipping.")
+        # Check if experiment data contains sample_name
+        if 'sample_name' not in experiment_data:
+            print(f"No sample_name found for experiment package {package_id}, skipping.")
             skipped_count += 1
             continue
-        
-        # Get associated samples
-        sample_names = package_to_sample[package_id]
-        
-        for sample_name in sample_names:
-            # Find the sample in the sample_id_map
-            if sample_name not in sample_id_map:
-                print(f"Sample {sample_name} not found in sample_id_map for experiment package {package_id}, skipping.")
-                skipped_count += 1
-                continue
-            
-            sample_id = sample_id_map[sample_name]
-            
-            # Generate a unique experiment accession and run accession
-            experiment_accession = f"EXP-{package_id}"
-            run_accession = f"RUN-{package_id}"
-            
-            # Check if experiment already exists
-            cursor.execute("SELECT id FROM experiment WHERE experiment_accession = %s", (experiment_accession,))
-            if cursor.fetchone():
-                print(f"Experiment with accession {experiment_accession} already exists, skipping.")
-                skipped_count += 1
-                continue
-            
-            try:
-                # Create new experiment
-                experiment_id = str(uuid.uuid4())
-                cursor.execute(
-                    """
-                    INSERT INTO experiment (
-                        id, sample_id, experiment_accession, run_accession, 
-                        bpa_package_id, source_json
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    RETURNING id
-                    """,
-                    (
-                        experiment_id,
-                        sample_id,
-                        experiment_accession,
-                        run_accession,
-                        package_id,
-                        json.dumps(experiment_data)
-                    )
+                
+        sample_name = experiment_data['sample_name']
+
+        # Get sample id from sample name
+        cursor.execute("SELECT id FROM sample WHERE sample_name = %s", (sample_name,))
+        sample_id = cursor.fetchone()
+        if not sample_id:
+            print(f"Sample with name {sample_name} not found, skipping.")
+            skipped_count += 1
+            continue
+
+        try:
+            # Create new experiment
+            experiment_id = str(uuid.uuid4())
+            cursor.execute(
+                """
+                INSERT INTO experiment (
+                    id, sample_id, bpa_package_id
                 )
-                
-                # Create experiment_submitted record
-                cursor.execute(
-                    """
-                    INSERT INTO experiment_submitted (
-                        id, experiment_id, experiment_accession, run_accession,
-                        sample_id, internal_json
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    """,
-                    (
-                        str(uuid.uuid4()),
-                        experiment_id,
-                        experiment_accession,
-                        run_accession,
-                        sample_id,
-                        json.dumps(experiment_data)
-                    )
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    experiment_id,
+                    sample_id,
+                    package_id,
                 )
+            )
+            
+            # Create experiment_submitted record
+            cursor.execute(
+                """
+                INSERT INTO experiment_submitted (
+                    id, experiment_id, sample_id, internal_json
+                )
+                VALUES (%s, %s, %s, %s)
+                """,
+                (
+                    str(uuid.uuid4()),
+                    experiment_id,
+                    sample_id,
+                    json.dumps(experiment_data)
+                )
+            )
+            
+            conn.commit()
+            created_experiments_count += 1
+            created_submitted_count += 1
+            
+            if created_experiments_count % 100 == 0:
+                print(f"Created {created_experiments_count} experiments...")
                 
-                conn.commit()
-                created_experiments_count += 1
-                created_submitted_count += 1
-                
-                if created_experiments_count % 100 == 0:
-                    print(f"Created {created_experiments_count} experiments...")
-                    
-            except Exception as e:
-                conn.rollback()
-                print(f"Error creating experiment {package_id}: {e}")
-                skipped_count += 1
+        except Exception as e:
+            conn.rollback()
+            print(f"Error creating experiment {package_id}: {e}")
+            skipped_count += 1
     
     print(f"Experiment import complete. Created experiments: {created_experiments_count}, "
           f"Created submitted records: {created_submitted_count}, Skipped: {skipped_count}")
     
-    # Dictionary of experiment IDs for future use if needed
-    experiment_id_map = {}
-    return created_experiments_count, experiment_id_map
+    return created_experiments_count
 
 
 def main():
@@ -345,11 +292,10 @@ def main():
     data_dir = Path(__file__).parent.parent / "data"
     organisms_file = data_dir / "unique_organisms.json"
     samples_file = data_dir / "unique_samples.json"
-    sample_package_map_file = data_dir / "sample_package_map.json"
     experiments_file = data_dir / "experiments.json"
     
     # Check if files exist
-    for file_path in [organisms_file, samples_file, sample_package_map_file, experiments_file]:
+    for file_path in [organisms_file, samples_file, experiments_file]:
         if not file_path.exists():
             print(f"Error: {file_path} not found.")
             return
@@ -358,10 +304,9 @@ def main():
     print("Loading data files...")
     organisms_data = load_json_file(organisms_file)
     samples_data = load_json_file(samples_file)
-    sample_package_map = load_json_file(sample_package_map_file)
     experiments_data = load_json_file(experiments_file)
     
-    if not all([organisms_data, samples_data, sample_package_map, experiments_data]):
+    if not all([organisms_data, samples_data, experiments_data]):
         print("Error loading data files.")
         return
     
@@ -380,15 +325,15 @@ def main():
         
         # 1. Import organisms
         print("\n--- Importing Organisms ---\n")
-        organisms_count, organism_id_map = import_organisms(conn, organisms_data)
+        organisms_count = import_organisms(conn, organisms_data)
         
         # 2. Import samples
         print("\n--- Importing Samples ---\n")
-        samples_count, sample_id_map = import_samples(conn, samples_data, sample_package_map, organism_id_map)
+        samples_count = import_samples(conn, samples_data)
         
         # 3. Import experiments
         print("\n--- Importing Experiments ---\n")
-        experiments_count, experiment_id_map = import_experiments(conn, experiments_data, sample_package_map, sample_id_map)
+        experiments_count = import_experiments(conn, experiments_data)
         
         print("\n=== BPA Data Import Complete ===\n")
         print(f"Summary:")
@@ -418,3 +363,7 @@ if __name__ == "__main__":
 # export ATOL_DB_USER=postgres
 # export ATOL_DB_PASSWORD=postgres
 # python3 import_bpa_data_standalone.py
+
+# organism: 162
+# sample: 1465
+# experimemt: 1527
