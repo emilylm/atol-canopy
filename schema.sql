@@ -60,7 +60,7 @@ CREATE TABLE sample (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organism_id UUID REFERENCES organism(id),
     sample_accession TEXT UNIQUE,
-    sample_name TEXT UNIQUE NOT NULL,
+    bpa_sample_id TEXT UNIQUE NOT NULL,
     -- Denormalised fields from ENA
 
     -- BPA fields (bpa_*)
@@ -113,7 +113,7 @@ CREATE TABLE experiment (
     -- Denormalised fields from ENA
     run_read_count TEXT,
     run_base_count TEXT,
-    dataset_name TEXT,
+    bpa_dataset_id TEXT,
     -- BPA fields (bpa_*)
     bpa_package_id TEXT UNIQUE NOT NULL,
     -- Internal AToL fields (internal_* (or atol_*??))
@@ -249,14 +249,14 @@ CREATE TABLE read (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     read_id_serial TEXT NOT NULL UNIQUE,
     experiment_id UUID REFERENCES experiment(id) NOT NULL,
-    dataset_name TEXT NOT NULL,
+    bpa_dataset_id TEXT NOT NULL,
     file_name TEXT,
     file_format TEXT,
     file_size BIGINT,
     file_extension_date TEXT,
     file_md5 TEXT,
     read_access_date TIMESTAMP,
-    parameters_url TEXT,
+    bioplatforms_url TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -272,7 +272,8 @@ CREATE TABLE genome_note (
     organism_id UUID REFERENCES organism(id) NOT NULL,
     note TEXT,
     other_fields TEXT,
-    version_chain_id UUID,
+    -- TODO UID or TEXT with semantic versioning?
+    version_id UUID,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
