@@ -1,5 +1,6 @@
 import json
 import uuid
+import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -266,7 +267,7 @@ def bulk_import_experiments(
     db: Session = Depends(get_db),
     experiments_data: Dict[str, Dict[str, Any]],  # Accept direct dictionary format from experiments.json
     current_user: User = Depends(get_current_active_user),
-) -> BulkImportResponse:
+) -> Any:
     """
     Bulk import experiments from a dictionary keyed by package_id.
     
@@ -276,73 +277,80 @@ def bulk_import_experiments(
     # Only users with 'curator' or 'admin' role can import experiments
     require_role(current_user, ["curator", "admin"])
     
+    # Load the ENA-ATOL mapping file
+    ena_atol_map_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "config", "ena-atol-map.json")
+    with open(ena_atol_map_path, "r") as f:
+        ena_atol_map = json.load(f)
+    
+    # Get the experiment mapping section
+    experiment_mapping = ena_atol_map.get("experiment", {})
+    run_mapping = ena_atol_map.get("run", {})
+    
     created_experiments_count = 0
     created_submitted_count = 0
     created_reads_count = 0
     skipped_count = 0
     
-    # Add debug counters
+    # Debug counters
     missing_bpa_sample_id_count = 0
     missing_sample_count = 0
     existing_experiment_count = 0
     missing_required_fields_count = 0
     
     for package_id, experiment_data in experiments_data.items():
-        # Check if experiment data contains bpa_sample_id
-        if 'bpa_sample_id' not in experiment_data:
-            print(f"bpa_sample_id missing for package: {package_id}")
+        # Check if experiment already exists
+        existing = db.query(Experiment).filter(Experiment.bpa_package_id == package_id).first()
+        if existing:
+            existing_experiment_count += 1
+            skipped_count += 1
+            continue
+        
+        # Get sample reference from experiment data
+        bpa_sample_id = experiment_data.get("bpa_sample_id", None)
+        if not bpa_sample_id:
             missing_bpa_sample_id_count += 1
             skipped_count += 1
             continue
-                
-        bpa_sample_id = experiment_data['bpa_sample_id']
-        if not bpa_sample_id:
-            print(f"bpa_sample_id missing for package: {package_id}")
-            missing_sample_count += 1
-            skipped_count += 1
-            continue
-
-        sample_id = None
-        # Get sample id from sample name
+        
+        # Look up the sample by bpa_sample_id
         sample = db.query(Sample).filter(Sample.bpa_sample_id == bpa_sample_id).first()
         if not sample:
-            print(f"Sample not found for bpa_sample_id: {bpa_sample_id}")
             missing_sample_count += 1
             skipped_count += 1
             continue
-        sample_id = sample.id
-
+        
+        # Check for required fields
+        if not experiment_data.get("bpa_library_id", None):
+            missing_required_fields_count += 1
+            skipped_count += 1
+            continue
+        
         try:
-            # Check if experiment already exists with this package_id
-            existing = db.query(Experiment).filter(Experiment.bpa_package_id == package_id).first()
-            if existing:
-                print(f"Experiment already exists with package: {package_id}")
-                existing_experiment_count += 1
-                skipped_count += 1
-                continue
-                
-            # Add additional fields from experiment_data that might be useful
-            experiment_accession = experiment_data.get('experiment_accession')
-            run_accession = experiment_data.get('run_accession')
-                
             # Create new experiment
             experiment_id = uuid.uuid4()
+            sample_id = sample.id
+            
             experiment = Experiment(
                 id=experiment_id,
                 sample_id=sample_id,
                 bpa_package_id=package_id,
-                experiment_accession=experiment_accession,
-                run_accession=run_accession,
                 source_json=experiment_data
             )
             db.add(experiment)
+            
+            # Create submitted_json based on the mapping
+            submitted_json = {}
+            for ena_key, atol_key in experiment_mapping.items():
+                if atol_key in experiment_data:
+                    submitted_json[ena_key] = experiment_data[atol_key]
             
             # Create experiment_submitted record
             experiment_submitted = ExperimentSubmitted(
                 id=uuid.uuid4(),
                 experiment_id=experiment_id,
                 sample_id=sample_id,
-                internal_json=experiment_data
+                internal_json=experiment_data,
+                submitted_json=submitted_json
             )
             db.add(experiment_submitted)
             
@@ -350,6 +358,12 @@ def bulk_import_experiments(
             if "runs" in experiment_data and isinstance(experiment_data["runs"], list):
                 for run in experiment_data["runs"]:
                     try:
+                        # Create submitted_json for run based on the mapping
+                        run_submitted_json = {}
+                        for ena_key, atol_key in run_mapping.items():
+                            if atol_key in run:
+                                run_submitted_json[ena_key] = run[atol_key]
+                        
                         # Create read entity for each run
                         read = Read(
                             id=uuid.uuid4(),
@@ -360,8 +374,11 @@ def bulk_import_experiments(
                             file_format=run.get("file_format", None),
                             file_submission_date=run.get("file_submission_date", None),
                             file_checksum=run.get("file_checksum", None),
-                            read_access_date=run.get("reads_access_date", None),
-                            bioplatforms_url=run.get("bioplatforms_url", None)
+                            read_access_date=run.get("read_access_date", None),
+                            bioplatforms_url=run.get("bioplatforms_url", None),
+                            internal_json=run,
+                            submitted_json=run_submitted_json
+                            # we should also add "status" field with "draft", "submitted", "rejected"
                         )
                         db.add(read)
                         created_reads_count += 1

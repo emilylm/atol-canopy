@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, Text, BigInteger
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
@@ -27,6 +27,8 @@ class Read(Base):
     file_checksum = Column(Text, nullable=True)
     read_access_date = Column(Text, nullable=True)
     bioplatforms_url = Column(Text, nullable=True)
+    internal_json = Column(JSONB, nullable=True)
+    submitted_json = Column(JSONB, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     

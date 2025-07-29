@@ -248,6 +248,8 @@ CREATE TABLE bioproject_experiment (
 CREATE TABLE read (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     experiment_id UUID REFERENCES experiment(id) NOT NULL,
+    internal_json JSONB,
+    submitted_json JSONB,
     bpa_dataset_id TEXT,
     bpa_resource_id TEXT,
     file_name TEXT,

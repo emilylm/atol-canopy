@@ -28,6 +28,7 @@ from app.schemas.sample import (
     SubmissionStatus as SchemaSubmissionStatus,
 )
 from app.schemas.bulk_import import BulkSampleImport, BulkImportResponse
+import os
 
 router = APIRouter()
 
@@ -277,6 +278,14 @@ def bulk_import_samples(
     # Only users with 'curator' or 'admin' role can import samples
     require_role(current_user, ["curator", "admin"])
     
+    # Load the ENA-ATOL mapping file
+    ena_atol_map_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "config", "ena-atol-map.json")
+    with open(ena_atol_map_path, "r") as f:
+        ena_atol_map = json.load(f)
+    
+    # Get the sample mapping section
+    sample_mapping = ena_atol_map.get("sample", {})
+    
     created_samples_count = 0
     created_submitted_count = 0
     skipped_count = 0
@@ -315,12 +324,19 @@ def bulk_import_samples(
             )
             db.add(sample)
             
+            # Create submitted_json based on the mapping
+            submitted_json = {}
+            for ena_key, atol_key in sample_mapping.items():
+                if atol_key in sample_data:
+                    submitted_json[ena_key] = sample_data[atol_key]
+            
             # Create sample_submitted record
             sample_submitted = SampleSubmitted(
                 id=uuid.uuid4(),
                 sample_id=sample_id,
                 organism_id=organism_id,
-                internal_json=sample_data
+                internal_json=sample_data,
+                submitted_json=submitted_json
             )
             db.add(sample_submitted)
             
@@ -329,6 +345,8 @@ def bulk_import_samples(
             created_submitted_count += 1
             
         except Exception as e:
+            print(f"Error creating sample with bpa_sample_id: {bpa_sample_id}")
+            print(e)
             db.rollback()
             skipped_count += 1
     
