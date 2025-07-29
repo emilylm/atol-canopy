@@ -64,6 +64,7 @@ def get_pipeline_inputs(
     *,
     db: Session = Depends(get_db),
     organism_grouping_key: str = Query(None, description="Organism grouping key to filter by"),
+    tax_id: str = Query(None, description="Organism tax ID to filter by"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -119,6 +120,69 @@ def get_pipeline_inputs(
         "scientific_name": organism.scientific_name,
         "files": files_dict
     })
+    
+    return result
+
+
+@router.get("/pipeline-inputs-by-tax-id")
+def get_pipeline_inputs_by_tax_id(
+    *,
+    db: Session = Depends(get_db),
+    tax_id: str = Query(None, description="Organism tax ID to filter by"),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Get pipeline inputs for organisms by tax_id.
+    
+    Returns a nested structure with tax_id as the top level key, organism_grouping_key as the second level key,
+    and scientific_name and files mapping for each organism.
+    Files mapping contains read file names as keys and their bioplatforms_urls as values.
+    """
+    print(f"Tax ID: {tax_id}")
+    
+    # Check if tax_id was provided
+    if tax_id is None:
+        raise HTTPException(status_code=422, detail="tax_id query parameter is required")
+    
+    # Get all organisms with this tax_id
+    organisms = organism_service.get_multi_with_filters(db, tax_id=tax_id)
+    if not organisms:
+        print(f"No organisms found with tax ID '{tax_id}'")
+        return {tax_id: {}}
+    
+    # Initialize result structure
+    result = {tax_id: {}}
+    
+    # Process each organism
+    for organism in organisms:
+        print(f"Found organism {organism.id} with tax ID '{tax_id}'")
+        organism_key = organism.organism_grouping_key
+        result[tax_id][organism_key] = {
+            "scientific_name": organism.scientific_name,
+            "files": {}
+        }
+        
+        # Get all samples for this organism
+        samples = db.query(Sample).filter(Sample.organism_id == organism.id).all()
+        if not samples:
+            print(f"No samples found for organism with ID {organism.id}")
+            continue
+        
+        # Collect all reads for this organism through the sample->experiment->read relationship
+        for sample in samples:
+            print(f"Sample {sample.id} found for organism {organism.id}")
+            # Get experiments for this sample
+            experiments = db.query(Experiment).filter(Experiment.sample_id == sample.id).all()
+            
+            for experiment in experiments:
+                print(f"Experiment {experiment.id} found for sample {sample.id}")
+                # Get reads for this experiment
+                reads = db.query(Read).filter(Read.experiment_id == experiment.id).all()
+                
+                for read in reads:
+                    print(f"Read {read.id} found for experiment {experiment.id}")
+                    if read.file_name and read.bioplatforms_url:
+                        result[tax_id][organism_key]["files"][read.file_name] = read.bioplatforms_url
     
     return result
 
