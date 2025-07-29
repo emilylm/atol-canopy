@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -11,8 +11,13 @@ from app.core.dependencies import (
     require_role,
 )
 from app.models.assembly import Assembly, AssemblyFetched, AssemblySubmitted
+from app.models.organism import Organism
+from app.models.sample import Sample
+from app.models.experiment import Experiment
+from app.models.read import Read
 from app.schemas.common import SubmissionStatus
 from app.models.user import User
+from app.services.organism_service import organism_service
 from app.schemas.assembly import (
     Assembly as AssemblySchema,
     AssemblyCreate,
@@ -52,6 +57,70 @@ def read_assemblies(
     
     assemblies = query.offset(skip).limit(limit).all()
     return assemblies
+
+
+@router.get("/pipeline-inputs")
+def get_pipeline_inputs(
+    *,
+    db: Session = Depends(get_db),
+    organism_grouping_key: str = Query(None, description="Organism grouping key to filter by"),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Get pipeline inputs for an organism by organism_grouping_key.
+    
+    Returns a list of objects with scientific_name and files mapping for each organism.
+    Files mapping contains read file names as keys and their bioplatforms_urls as values.
+    """
+    print(f"Organism grouping key: {organism_grouping_key}")
+    
+    # Check if organism_grouping_key was provided
+    if organism_grouping_key is None:
+        raise HTTPException(status_code=422, detail="organism_grouping_key query parameter is required")
+    if db is None:
+        raise HTTPException(status_code=422, detail="database session is required")
+    # Get the organism by organism_grouping_key
+    organism = organism_service.get_by_organism_grouping_key(db, organism_grouping_key)
+    if not organism:
+        print(f"Organism with grouping key '{organism_grouping_key}' not found")
+        raise HTTPException(status_code=404, detail=f"Organism with grouping key '{organism_grouping_key}' not found")
+    
+    # Get all samples for this organism
+    samples = db.query(Sample).filter(Sample.organism_id == organism.id).all()
+    if not samples:
+        print(f"No samples found for organism with grouping key '{organism_grouping_key}'")
+        return [{
+            "scientific_name": organism.scientific_name,
+            "files": {}
+        }]
+    
+    # Get all experiments and reads for these samples
+    result = []
+    files_dict = {}
+    
+    # Collect all reads for this organism through the sample->experiment->read relationship
+    for sample in samples:
+        print(f"Sample {sample.id} found for organism with grouping key '{organism_grouping_key}'")
+        # Get experiments for this sample
+        experiments = db.query(Experiment).filter(Experiment.sample_id == sample.id).all()
+        
+        for experiment in experiments:
+            print(f"Experiment {experiment.id} found for sample {sample.id}")
+            # Get reads for this experiment
+            reads = db.query(Read).filter(Read.experiment_id == experiment.id).all()
+            
+            for read in reads:
+                print(f"Read {read.id} found for experiment {experiment.id}")
+                if read.file_name and read.bioplatforms_url:
+                    files_dict[read.file_name] = read.bioplatforms_url
+    
+    # Create the result object
+    result.append({
+        "scientific_name": organism.scientific_name,
+        "files": files_dict
+    })
+    
+    return result
 
 
 @router.post("/", response_model=AssemblySchema)
@@ -267,3 +336,6 @@ def create_assembly_fetch(
     db.commit()
     db.refresh(fetch)
     return fetch
+
+
+

@@ -19,6 +19,10 @@ class OrganismService(BaseService[Organism, OrganismCreate, OrganismUpdate]):
         """Get organism by taxon ID."""
         return db.query(Organism).filter(Organism.tax_id == tax_id).first()
     
+    def get_by_organism_grouping_key(self, db: Session, organism_grouping_key: str) -> Optional[Organism]:
+        """Get organism by organism_grouping_key."""
+        return db.query(Organism).filter(Organism.organism_grouping_key == organism_grouping_key).first()
+    
     def get_multi_with_filters(
         self, 
         db: Session, 

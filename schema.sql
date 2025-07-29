@@ -255,7 +255,7 @@ CREATE TABLE read (
     file_size BIGINT,
     file_submission_date TEXT,
     file_checksum TEXT,
-    read_access_date TIMESTAMP,
+    read_access_date TEXT,
     bioplatforms_url TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
