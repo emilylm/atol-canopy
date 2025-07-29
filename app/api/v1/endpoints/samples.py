@@ -14,6 +14,7 @@ from app.core.dependencies import (
 )
 from app.models.sample import Sample, SampleFetched, SampleSubmitted
 from app.models.organism import Organism
+from app.models.experiment import Experiment
 from app.models.user import User
 from app.schemas.sample import (
     Sample as SampleSchema,
@@ -66,7 +67,7 @@ def create_sample(
     
     sample = Sample(
         organism_id=sample_in.organism_id,
-        sample_name=sample_in.sample_name,
+        bpa_sample_id=sample_in.bpa_sample_id,
         sample_accession=sample_in.sample_accession,
         source_json=sample_in.source_json,
     )
@@ -178,7 +179,7 @@ def create_sample_submission(
     submission = SampleSubmitted(
         sample_id=submission_in.sample_id,
         organism_id=submission_in.organism_id,
-        sample_name=submission_in.sample_name,
+        bpa_sample_id=submission_in.bpa_sample_id,
         sample_accession=submission_in.sample_accession,
         submitted_json=submission_in.submitted_json,
         internal_json=submission_in.internal_json,
@@ -268,10 +269,10 @@ def bulk_import_samples(
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
-    Bulk import samples from a dictionary keyed by sample_name.
+    Bulk import samples from a dictionary keyed by bpa_sample_id.
     
     The request body should directly match the format of the JSON file in data/unique_samples.json,
-    which is a dictionary keyed by sample_name without a wrapping 'samples' key.
+    which is a dictionary keyed by bpa_sample_id without a wrapping 'samples' key.
     """
     # Only users with 'curator' or 'admin' role can import samples
     require_role(current_user, ["curator", "admin"])
@@ -280,9 +281,9 @@ def bulk_import_samples(
     created_submitted_count = 0
     skipped_count = 0
     
-    for sample_name, sample_data in samples_data.items():
+    for bpa_sample_id, sample_data in samples_data.items():
         # Check if sample already exists
-        existing = db.query(Sample).filter(Sample.sample_name == sample_name).first()
+        existing = db.query(Sample).filter(Sample.bpa_sample_id == bpa_sample_id).first()
         if existing:
             skipped_count += 1
             continue
@@ -295,14 +296,21 @@ def bulk_import_samples(
             organism = db.query(Organism).filter(Organism.organism_grouping_key == organism_grouping_key).first()
             if organism:
                 organism_id = organism.id
-        
+        else:
+            print(f"Organism not found for sample {bpa_sample_id}, Skipping")
+            skipped_count += 1
+            continue
+        if not organism:
+            print(f"Organism not found with organism_grouping_key {organism_grouping_key}, Skipping")
+            skipped_count += 1
+            continue
         try:
             # Create new sample
             sample_id = uuid.uuid4()
             sample = Sample(
                 id=sample_id,
                 organism_id=organism_id,
-                sample_name=sample_name,
+                bpa_sample_id=bpa_sample_id,
                 source_json=sample_data
             )
             db.add(sample)
@@ -330,3 +338,43 @@ def bulk_import_samples(
         "message": f"Sample import complete. Created samples: {created_samples_count}, "
                   f"Created submitted records: {created_submitted_count}, Skipped: {skipped_count}"
     }
+
+
+@router.get("/submitted/by-experiment/{bpa_package_id}", response_model=List[SampleSubmittedSchema])
+async def get_sample_submitted_by_experiment_package_id(
+    bpa_package_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> List[SampleSubmittedSchema]:
+    """
+    Get SampleSubmitted data for a specific experiment.bpa_package_id.
+    
+    This endpoint retrieves all submitted sample data associated with a specific experiment BPA package ID.
+    """
+    # Find the experiment with the given bpa_package_id
+    experiment = db.query(Experiment).filter(Experiment.bpa_package_id == bpa_package_id).first()
+    if not experiment:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Experiment with bpa_package_id {bpa_package_id} not found"
+        )
+    
+    # Get the sample_id from the experiment
+    if not experiment.sample_id:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Experiment with bpa_package_id {bpa_package_id} has no associated sample"
+        )
+    
+    # Find the submitted records for this sample
+    submitted_records = db.query(SampleSubmitted).filter(
+        SampleSubmitted.sample_id == experiment.sample_id
+    ).all()
+    
+    if not submitted_records:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No submitted sample records found for experiment with bpa_package_id {bpa_package_id}"
+        )
+    
+    return submitted_records

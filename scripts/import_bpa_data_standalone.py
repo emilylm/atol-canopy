@@ -118,7 +118,7 @@ def import_samples(conn, samples_data):
     
     Args:
         conn: Database connection
-        samples_data: Dictionary of sample data keyed by sample_name
+        samples_data: Dictionary of sample data keyed by bpa_sample_id
     """
     print(f"Importing {len(samples_data)} samples...")
     
@@ -128,12 +128,12 @@ def import_samples(conn, samples_data):
     
     cursor = conn.cursor()
     
-    for sample_name, sample_data in samples_data.items():
+    for bpa_sample_id, sample_data in samples_data.items():
         # Check if sample already exists
-        cursor.execute("SELECT id FROM sample WHERE sample_name = %s", (sample_name,))
+        cursor.execute("SELECT id FROM sample WHERE bpa_sample_id = %s", (bpa_sample_id,))
         existing = cursor.fetchone()
         if existing:
-            print(f"Sample with name {sample_name} already exists, skipping.")
+            print(f"Sample with name {bpa_sample_id} already exists, skipping.")
             skipped_count += 1
             continue
         
@@ -147,21 +147,21 @@ def import_samples(conn, samples_data):
             if organism_result:
                 organism_id = organism_result[0]
             else:
-                print(f"Warning: Organism with grouping key {organism_grouping_key} not found for sample {sample_name}. Creating sample without organism reference.")
+                print(f"Warning: Organism with grouping key {organism_grouping_key} not found for sample {bpa_sample_id}. Creating sample without organism reference.")
         
         try:
             # Create new sample
             sample_id = str(uuid.uuid4())
             cursor.execute(
                 """
-                INSERT INTO sample (id, organism_id, sample_name, source_json)
+                INSERT INTO sample (id, organism_id, bpa_sample_id, source_json)
                 VALUES (%s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
                     sample_id,
                     organism_id,
-                    sample_name,
+                    bpa_sample_id,
                     json.dumps(sample_data)
                 )
             )
@@ -190,7 +190,7 @@ def import_samples(conn, samples_data):
                 
         except Exception as e:
             conn.rollback()
-            print(f"Error creating sample {sample_name}: {e}")
+            print(f"Error creating sample {bpa_sample_id}: {e}")
             skipped_count += 1
     
     print(f"Sample import complete. Created samples: {created_samples_count}, "
@@ -215,19 +215,19 @@ def import_experiments(conn, experiments_data):
     cursor = conn.cursor()
     
     for package_id, experiment_data in experiments_data.items():
-        # Check if experiment data contains sample_name
-        if 'sample_name' not in experiment_data:
-            print(f"No sample_name found for experiment package {package_id}, skipping.")
+        # Check if experiment data contains bpa_sample_id
+        if 'bpa_sample_id' not in experiment_data:
+            print(f"No bpa_sample_id found for experiment package {package_id}, skipping.")
             skipped_count += 1
             continue
                 
-        sample_name = experiment_data['sample_name']
+        bpa_sample_id = experiment_data['bpa_sample_id']
 
         # Get sample id from sample name
-        cursor.execute("SELECT id FROM sample WHERE sample_name = %s", (sample_name,))
+        cursor.execute("SELECT id FROM sample WHERE bpa_sample_id = %s", (bpa_sample_id,))
         sample_id = cursor.fetchone()
         if not sample_id:
-            print(f"Sample with name {sample_name} not found, skipping.")
+            print(f"Sample with name {bpa_sample_id} not found, skipping.")
             skipped_count += 1
             continue
 

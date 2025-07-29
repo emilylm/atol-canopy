@@ -6,25 +6,20 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import (
-    get_current_active_user,
-    get_current_superuser,
-    get_db,
-    require_role,
-)
-from app.models.experiment import Experiment, ExperimentFetched, ExperimentSubmitted
-from app.schemas.common import SubmissionStatus
+from app.core.dependencies import get_current_active_user, get_current_superuser, get_db, require_role
+from app.models.experiment import Experiment, ExperimentSubmitted
 from app.models.sample import Sample
 from app.models.user import User
+from app.schemas.bulk_import import BulkImportResponse
 from app.schemas.experiment import (
-    Experiment as ExperimentSchema,
     ExperimentCreate,
+    Experiment as ExperimentSchema,
+    ExperimentUpdate,
+    ExperimentSubmitted as ExperimentSubmittedSchema,
     ExperimentFetched as ExperimentFetchedSchema,
     ExperimentFetchedCreate,
-    ExperimentSubmitted as ExperimentSubmittedSchema,
     ExperimentSubmittedCreate,
     ExperimentSubmittedUpdate,
-    ExperimentUpdate,
     SubmissionStatus as SchemaSubmissionStatus,
 )
 from app.schemas.bulk_import import BulkExperimentImport, BulkImportResponse
@@ -283,33 +278,59 @@ def bulk_import_experiments(
     created_submitted_count = 0
     skipped_count = 0
     
-    for package_id, experiment_data in experiments_data.experiments.items():
-        # Check if experiment data contains sample_name
-        if 'sample_name' not in experiment_data:
+    # Add debug counters
+    missing_bpa_sample_id_count = 0
+    missing_sample_count = 0
+    existing_experiment_count = 0
+    missing_required_fields_count = 0
+    
+    for package_id, experiment_data in experiments_data.items():
+        # Check if experiment data contains bpa_sample_id
+        if 'bpa_sample_id' not in experiment_data:
+            print(f"bpa_sample_id missing for package: {package_id}")
+            missing_bpa_sample_id_count += 1
             skipped_count += 1
             continue
                 
-        sample_name = experiment_data['sample_name']
-
-        # Get sample id from sample name
-        sample = db.query(Sample).filter(Sample.sample_name == sample_name).first()
-        if not sample:
+        bpa_sample_id = experiment_data['bpa_sample_id']
+        if not bpa_sample_id:
+            print(f"bpa_sample_id missing for package: {package_id}")
+            missing_sample_count += 1
             skipped_count += 1
             continue
+
+        sample_id = None
+        # Get sample id from sample name
+        sample = db.query(Sample).filter(Sample.bpa_sample_id == bpa_sample_id).first()
+        if not sample:
+            print(f"Sample not found for bpa_sample_id: {bpa_sample_id}")
+            missing_sample_count += 1
+            skipped_count += 1
+            continue
+        sample_id = sample.id
 
         try:
             # Check if experiment already exists with this package_id
             existing = db.query(Experiment).filter(Experiment.bpa_package_id == package_id).first()
             if existing:
+                print(f"Experiment already exists with package: {package_id}")
+                existing_experiment_count += 1
                 skipped_count += 1
                 continue
+                
+            # Add additional fields from experiment_data that might be useful
+            experiment_accession = experiment_data.get('experiment_accession')
+            run_accession = experiment_data.get('run_accession')
                 
             # Create new experiment
             experiment_id = uuid.uuid4()
             experiment = Experiment(
                 id=experiment_id,
-                sample_id=sample.id,
-                bpa_package_id=package_id
+                sample_id=sample_id,
+                bpa_package_id=package_id,
+                experiment_accession=experiment_accession,
+                run_accession=run_accession,
+                source_json=experiment_data
             )
             db.add(experiment)
             
@@ -317,7 +338,7 @@ def bulk_import_experiments(
             experiment_submitted = ExperimentSubmitted(
                 id=uuid.uuid4(),
                 experiment_id=experiment_id,
-                sample_id=sample.id,
+                sample_id=sample_id,
                 internal_json=experiment_data
             )
             db.add(experiment_submitted)
@@ -327,12 +348,52 @@ def bulk_import_experiments(
             created_submitted_count += 1
             
         except Exception as e:
+            print(f"Error creating experiment with package_id: {package_id}, bpa_sample_id: {bpa_sample_id}")
+            print(e)
             db.rollback()
             skipped_count += 1
     
     return {
         "created_count": created_experiments_count,
         "skipped_count": skipped_count,
-        "message": f"Experiment import complete. Created experiments: {created_experiments_count}, "
-                  f"Created submitted records: {created_submitted_count}, Skipped: {skipped_count}"
+        "message": f"Experiment import complete. Created experiments: {created_experiments_count}, Created submitted records: {created_submitted_count}, Skipped: {skipped_count}",
+        "debug": {
+            "missing_bpa_sample_id": missing_bpa_sample_id_count,
+            "missing_sample": missing_sample_count,
+            "existing_experiment": existing_experiment_count,
+            "missing_required_fields": missing_required_fields_count
+        }
     }
+
+
+@router.get("/submitted/{bpa_package_id}", response_model=ExperimentSubmittedSchema)
+async def get_experiment_submitted_by_package_id(
+    bpa_package_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> ExperimentSubmittedSchema:
+    """
+    Get ExperimentSubmitted data for a specific bpa_package_id.
+    
+    This endpoint retrieves the submitted experiment data associated with a specific BPA package ID.
+    """
+    # Find the experiment with the given bpa_package_id
+    experiment = db.query(Experiment).filter(Experiment.bpa_package_id == bpa_package_id).first()
+    if not experiment:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Experiment with bpa_package_id {bpa_package_id} not found"
+        )
+    
+    # Find the submitted record for this experiment
+    submitted_record = db.query(ExperimentSubmitted).filter(
+        ExperimentSubmitted.experiment_id == experiment.id
+    ).first()
+    
+    if not submitted_record:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No submitted record found for experiment with bpa_package_id {bpa_package_id}"
+        )
+    
+    return submitted_record

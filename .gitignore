@@ -1,1 +1,8 @@
+# Environment variables
 .env
+
+# Input data directory
+data/
+
+
+*__pycache__*

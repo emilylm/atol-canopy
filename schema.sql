@@ -236,7 +236,6 @@ CREATE TABLE bioproject (
 
 -- Bioproject experiment table
 CREATE TABLE bioproject_experiment (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     bioproject_id UUID REFERENCES bioproject(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id) NOT NULL,
     PRIMARY KEY (bioproject_id, experiment_id)
@@ -281,7 +280,6 @@ CREATE TABLE genome_note (
 
 -- Genome note assembly table
 CREATE TABLE genome_note_assembly (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     genome_note_id UUID REFERENCES genome_note(id) NOT NULL,
     assembly_id UUID REFERENCES assembly(id) NOT NULL,
     PRIMARY KEY (genome_note_id, assembly_id)

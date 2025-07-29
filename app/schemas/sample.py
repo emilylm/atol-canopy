@@ -14,7 +14,7 @@ class SampleBase(BaseModel):
     """Base Sample schema with common attributes."""
     organism_id: Optional[UUID] = None
     sample_accession: Optional[str] = None
-    sample_name: Optional[str] = None
+    bpa_sample_id: Optional[str] = None
 
 # Schema for creating a new sample
 class SampleCreate(SampleBase):
@@ -27,7 +27,7 @@ class SampleUpdate(BaseModel):
     """Schema for updating an existing sample."""
     organism_id: Optional[UUID] = None
     sample_accession: Optional[str] = None
-    sample_name: Optional[str] = None
+    bpa_sample_id: Optional[str] = None
     source_json: Optional[Dict] = None
 
 # Schema for sample in DB

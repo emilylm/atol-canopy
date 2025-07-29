@@ -154,6 +154,12 @@ def bulk_import_organisms(
         if "taxon_id" in organism_data:
             tax_id = organism_data["taxon_id"]
         else:
+            print(f"Missing taxon_id for organism: {organism_data}")
+            skipped_count += 1
+            continue
+        
+        if "organism_grouping_key" not in organism_data:
+            print(f"Missing organism_grouping_key for organism: {organism_data}")
             skipped_count += 1
             continue
         

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 class ReadBase(BaseModel):
     """Base Read schema with common attributes."""
     experiment_id: UUID
-    dataset_name: str
+    bpa_dataset_id: str
     file_name: Optional[str] = None
     file_format: Optional[str] = None
     file_size: Optional[int] = None
@@ -29,7 +29,7 @@ class ReadCreate(ReadBase):
 class ReadUpdate(BaseModel):
     """Schema for updating an existing Read."""
     experiment_id: Optional[UUID] = None
-    dataset_name: Optional[str] = None
+    bpa_dataset_id: Optional[str] = None
     file_name: Optional[str] = None
     file_format: Optional[str] = None
     file_size: Optional[int] = None

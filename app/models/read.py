@@ -18,7 +18,7 @@ class Read(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=False)
-    dataset_name = Column(Text, nullable=False)
+    bpa_dataset_id = Column(Text, nullable=False)
     file_name = Column(Text, nullable=True)
     file_format = Column(Text, nullable=True)
     file_size = Column(BigInteger, nullable=True)

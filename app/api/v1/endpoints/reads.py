@@ -56,7 +56,7 @@ def create_read(
     
     read = Read(
         experiment_id=read_in.experiment_id,
-        dataset_name=read_in.dataset_name,
+        bpa_dataset_id=read_in.bpa_dataset_id,
         file_name=read_in.file_name,
         file_format=read_in.file_format,
         file_size=read_in.file_size,
