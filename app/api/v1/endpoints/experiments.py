@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_active_user, get_current_superuser, get_db, require_role
 from app.models.experiment import Experiment, ExperimentSubmitted
+from app.models.read import Read
 from app.models.sample import Sample
 from app.models.user import User
 from app.schemas.bulk_import import BulkImportResponse
@@ -276,6 +278,7 @@ def bulk_import_experiments(
     
     created_experiments_count = 0
     created_submitted_count = 0
+    created_reads_count = 0
     skipped_count = 0
     
     # Add debug counters
@@ -343,6 +346,30 @@ def bulk_import_experiments(
             )
             db.add(experiment_submitted)
             
+            # Process runs if they exist in the experiment data
+            if "runs" in experiment_data and isinstance(experiment_data["runs"], list):
+                for run in experiment_data["runs"]:
+                    try:
+                        # Create read entity for each run
+                        read = Read(
+                            id=uuid.uuid4(),
+                            experiment_id=experiment_id,
+                            bpa_dataset_id=run.get("bpa_dataset_id", None),
+                            bpa_resource_id=run.get("bpa_resource_id", None),
+                            file_name=run.get("file_name", None),
+                            file_format=run.get("file_format", None),
+                            file_submission_date=run.get("file_submission_date", None),
+                            file_checksum=run.get("file_checksum", None),
+                            read_access_date=run.get("reads_access_date", None),
+                            bioplatforms_url=run.get("bioplatforms_url", None)
+                        )
+                        db.add(read)
+                        created_reads_count += 1
+                    except Exception as e:
+                        print(f"Error creating read for experiment: {experiment_id}, file: {run.get('file_name')}")
+                        print(e)
+                        # Continue with other runs even if one fails
+            
             db.commit()
             created_experiments_count += 1
             created_submitted_count += 1
@@ -356,7 +383,7 @@ def bulk_import_experiments(
     return {
         "created_count": created_experiments_count,
         "skipped_count": skipped_count,
-        "message": f"Experiment import complete. Created experiments: {created_experiments_count}, Created submitted records: {created_submitted_count}, Skipped: {skipped_count}",
+        "message": f"Experiment import complete. Created experiments: {created_experiments_count}, Created submitted records: {created_submitted_count}, Created reads: {created_reads_count}, Skipped: {skipped_count}",
         "debug": {
             "missing_bpa_sample_id": missing_bpa_sample_id_count,
             "missing_sample": missing_sample_count,

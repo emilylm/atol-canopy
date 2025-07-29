@@ -77,6 +77,7 @@ def create_user(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
+        # TODO restrict roles to only be assignable after creation? or require admin role to create?
         roles=user_in.roles,
         is_active=user_in.is_active,
     )

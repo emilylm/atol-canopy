@@ -57,13 +57,14 @@ def create_read(
     read = Read(
         experiment_id=read_in.experiment_id,
         bpa_dataset_id=read_in.bpa_dataset_id,
+        bpa_resource_id=read_in.bpa_resource_id,
         file_name=read_in.file_name,
         file_format=read_in.file_format,
         file_size=read_in.file_size,
-        file_extension_date=read_in.file_extension_date,
-        file_md5=read_in.file_md5,
+        file_submission_date=read_in.file_submission_date,
+        file_checksum=read_in.file_checksum,
         read_access_date=read_in.read_access_date,
-        parameters_url=read_in.parameters_url,
+        bioplatforms_url=read_in.bioplatforms_url,
     )
     db.add(read)
     db.commit()

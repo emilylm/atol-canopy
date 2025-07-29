@@ -19,13 +19,17 @@ class ReadService(BaseService[Read, ReadCreate, ReadUpdate]):
         """Get reads by dataset name."""
         return db.query(Read).filter(Read.bpa_dataset_id == bpa_dataset_id).all()
     
+    def get_by_bpa_resource_id(self, db: Session, bpa_resource_id: str) -> List[Read]:
+        """Get reads by resource name."""
+        return db.query(Read).filter(Read.bpa_resource_id == bpa_resource_id).all()
+    
     def get_by_file_name(self, db: Session, file_name: str) -> List[Read]:
         """Get reads by file name."""
         return db.query(Read).filter(Read.file_name == file_name).all()
     
-    def get_by_file_md5(self, db: Session, file_md5: str) -> Optional[Read]:
+    def get_by_file_checksum(self, db: Session, file_checksum: str) -> Optional[Read]:
         """Get read by file MD5."""
-        return db.query(Read).filter(Read.file_md5 == file_md5).first()
+        return db.query(Read).filter(Read.file_checksum == file_checksum).first()
     
     def get_multi_with_filters(
         self, 
@@ -34,15 +38,12 @@ class ReadService(BaseService[Read, ReadCreate, ReadUpdate]):
         skip: int = 0, 
         limit: int = 100,
         experiment_id: Optional[UUID] = None,
-        bpa_dataset_id: Optional[str] = None,
         file_format: Optional[str] = None
     ) -> List[Read]:
         """Get reads with filters."""
         query = db.query(Read)
         if experiment_id:
             query = query.filter(Read.experiment_id == experiment_id)
-        if bpa_dataset_id:
-            query = query.filter(Read.bpa_dataset_id == bpa_dataset_id)
         if file_format:
             query = query.filter(Read.file_format == file_format)
         return query.offset(skip).limit(limit).all()

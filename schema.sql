@@ -247,14 +247,14 @@ CREATE TABLE bioproject_experiment (
 
 CREATE TABLE read (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    read_id_serial TEXT NOT NULL UNIQUE,
     experiment_id UUID REFERENCES experiment(id) NOT NULL,
-    bpa_dataset_id TEXT NOT NULL,
+    bpa_dataset_id TEXT,
+    bpa_resource_id TEXT,
     file_name TEXT,
     file_format TEXT,
     file_size BIGINT,
-    file_extension_date TEXT,
-    file_md5 TEXT,
+    file_submission_date TEXT,
+    file_checksum TEXT,
     read_access_date TIMESTAMP,
     bioplatforms_url TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),

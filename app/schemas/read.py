@@ -9,14 +9,15 @@ from pydantic import BaseModel
 class ReadBase(BaseModel):
     """Base Read schema with common attributes."""
     experiment_id: UUID
-    bpa_dataset_id: str
+    bpa_dataset_id: Optional[str] = None
+    bpa_resource_id: Optional[str] = None
     file_name: Optional[str] = None
     file_format: Optional[str] = None
     file_size: Optional[int] = None
-    file_extension_date: Optional[str] = None
-    file_md5: Optional[str] = None
-    read_access_date: Optional[datetime] = None
-    parameters_url: Optional[str] = None
+    file_submission_date: Optional[str] = None
+    file_checksum: Optional[str] = None
+    read_access_date: Optional[str] = None
+    bioplatforms_url: Optional[str] = None
 
 
 # Schema for creating a new Read
@@ -30,13 +31,14 @@ class ReadUpdate(BaseModel):
     """Schema for updating an existing Read."""
     experiment_id: Optional[UUID] = None
     bpa_dataset_id: Optional[str] = None
+    bpa_resource_id: Optional[str] = None
     file_name: Optional[str] = None
     file_format: Optional[str] = None
     file_size: Optional[int] = None
-    file_extension_date: Optional[str] = None
-    file_md5: Optional[str] = None
-    read_access_date: Optional[datetime] = None
-    parameters_url: Optional[str] = None
+    file_submission_date: Optional[str] = None
+    file_checksum: Optional[str] = None
+    read_access_date: Optional[str] = None
+    bioplatforms_url: Optional[str] = None
 
 
 # Schema for Read in DB
