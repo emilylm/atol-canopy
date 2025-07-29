@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Text, BigInteger
+from sqlalchemy import Column, DateTime, ForeignKey, Text, BigInteger, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
@@ -29,6 +29,7 @@ class Read(Base):
     bioplatforms_url = Column(Text, nullable=True)
     internal_json = Column(JSONB, nullable=True)
     submitted_json = Column(JSONB, nullable=True)
+    status = Column(SQLAlchemyEnum("draft", "submitted", "rejected", name="read_submission_status"), nullable=False, default="draft")
     created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     

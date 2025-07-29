@@ -259,6 +259,7 @@ CREATE TABLE read (
     file_checksum TEXT,
     read_access_date TEXT,
     bioplatforms_url TEXT,
+    status submission_status NOT NULL DEFAULT 'draft',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

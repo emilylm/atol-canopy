@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -18,6 +18,9 @@ class ReadBase(BaseModel):
     file_checksum: Optional[str] = None
     read_access_date: Optional[str] = None
     bioplatforms_url: Optional[str] = None
+    internal_json: Optional[Dict[str, Any]] = None
+    submitted_json: Optional[Dict[str, Any]] = None
+    status: Literal["draft", "submitted", "rejected"] = "draft"
 
 
 # Schema for creating a new Read
@@ -39,6 +42,9 @@ class ReadUpdate(BaseModel):
     file_checksum: Optional[str] = None
     read_access_date: Optional[str] = None
     bioplatforms_url: Optional[str] = None
+    internal_json: Optional[Dict[str, Any]] = None
+    submitted_json: Optional[Dict[str, Any]] = None
+    status: Optional[Literal["draft", "submitted", "rejected"]] = None
 
 
 # Schema for Read in DB

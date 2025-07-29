@@ -75,6 +75,25 @@ def create_experiment(
     return experiment
 
 
+@router.get("/{experiment_id}/submitted-json", response_model=ExperimentSubmittedSchema)
+def get_experiment_submitted_json(
+    *,
+    db: Session = Depends(get_db),
+    experiment_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Get submitted_json for a specific experiment.
+    """
+    experiment_submitted = db.query(ExperimentSubmitted).filter(ExperimentSubmitted.experiment_id == experiment_id).first()
+    if not experiment_submitted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Experiment submitted data not found",
+        )
+    return experiment_submitted
+
+
 @router.get("/{experiment_id}", response_model=ExperimentSchema)
 def read_experiment(
     *,
@@ -289,7 +308,8 @@ def bulk_import_experiments(
     created_experiments_count = 0
     created_submitted_count = 0
     created_reads_count = 0
-    skipped_count = 0
+    skipped_experiments_count = 0
+    skipped_runs_count = 0
     
     # Debug counters
     missing_bpa_sample_id_count = 0
@@ -302,27 +322,27 @@ def bulk_import_experiments(
         existing = db.query(Experiment).filter(Experiment.bpa_package_id == package_id).first()
         if existing:
             existing_experiment_count += 1
-            skipped_count += 1
+            skipped_experiments_count += 1
             continue
         
         # Get sample reference from experiment data
         bpa_sample_id = experiment_data.get("bpa_sample_id", None)
         if not bpa_sample_id:
             missing_bpa_sample_id_count += 1
-            skipped_count += 1
+            skipped_experiments_count += 1
             continue
         
         # Look up the sample by bpa_sample_id
         sample = db.query(Sample).filter(Sample.bpa_sample_id == bpa_sample_id).first()
         if not sample:
             missing_sample_count += 1
-            skipped_count += 1
+            skipped_experiments_count += 1
             continue
         
         # Check for required fields
         if not experiment_data.get("bpa_library_id", None):
             missing_required_fields_count += 1
-            skipped_count += 1
+            skipped_experiments_count += 1
             continue
         
         try:
@@ -377,14 +397,15 @@ def bulk_import_experiments(
                             read_access_date=run.get("read_access_date", None),
                             bioplatforms_url=run.get("bioplatforms_url", None),
                             internal_json=run,
-                            submitted_json=run_submitted_json
-                            # we should also add "status" field with "draft", "submitted", "rejected"
+                            submitted_json=run_submitted_json,
+                            status="draft"
                         )
                         db.add(read)
                         created_reads_count += 1
                     except Exception as e:
                         print(f"Error creating read for experiment: {experiment_id}, file: {run.get('file_name')}")
                         print(e)
+                        skipped_runs_count += 1
                         # Continue with other runs even if one fails
             
             db.commit()
@@ -395,12 +416,13 @@ def bulk_import_experiments(
             print(f"Error creating experiment with package_id: {package_id}, bpa_sample_id: {bpa_sample_id}")
             print(e)
             db.rollback()
-            skipped_count += 1
+            skipped_experiments_count += 1
     
     return {
         "created_count": created_experiments_count,
-        "skipped_count": skipped_count,
-        "message": f"Experiment import complete. Created experiments: {created_experiments_count}, Created submitted records: {created_submitted_count}, Created reads: {created_reads_count}, Skipped: {skipped_count}",
+        "skipped_experiment_count": skipped_experiments_count,
+        "skipped_run_count": skipped_runs_count,
+        "message": f"Experiment import complete. Created experiments: {created_experiments_count}, Created submitted records: {created_submitted_count}, Created reads: {created_reads_count}, Skipped: {skipped_runs_count}",
         "debug": {
             "missing_bpa_sample_id": missing_bpa_sample_id_count,
             "missing_sample": missing_sample_count,

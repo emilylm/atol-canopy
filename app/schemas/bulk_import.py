@@ -35,6 +35,8 @@ class BulkExperimentImport(BaseModel):
 class BulkImportResponse(BaseModel):
     """Schema for bulk import response."""
     created_count: int
-    skipped_count: int
+    skipped_count: Optional[int] = None
+    skipped_experiment_count: Optional[int] = None
+    skipped_run_count: Optional[int] = None
     message: str
     debug: Optional[Dict[str, int]] = None

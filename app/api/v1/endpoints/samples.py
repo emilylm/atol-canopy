@@ -28,6 +28,7 @@ from app.schemas.sample import (
     SubmissionStatus as SchemaSubmissionStatus,
 )
 from app.schemas.bulk_import import BulkSampleImport, BulkImportResponse
+from app.schemas.common import SubmittedJsonResponse
 import os
 
 router = APIRouter()
@@ -76,6 +77,25 @@ def create_sample(
     db.commit()
     db.refresh(sample)
     return sample
+
+
+@router.get("/{sample_id}/submitted-json", response_model=SubmittedJsonResponse)
+def get_sample_submitted_json(
+    *,
+    db: Session = Depends(get_db),
+    sample_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Get submitted_json for a specific sample.
+    """
+    sample_submitted = db.query(SampleSubmitted).filter(SampleSubmitted.sample_id == sample_id).first()
+    if not sample_submitted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sample submitted data not found",
+        )
+    return {"submitted_json": sample_submitted.submitted_json}
 
 
 @router.get("/{sample_id}", response_model=SampleSchema)

@@ -1,7 +1,7 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
@@ -17,6 +17,7 @@ from app.schemas.read import (
     ReadCreate,
     ReadUpdate,
 )
+from app.schemas.common import SubmittedJsonResponse
 
 router = APIRouter()
 
@@ -70,6 +71,30 @@ def create_read(
     db.commit()
     db.refresh(read)
     return read
+
+
+@router.get("/{read_id}/submitted-json", response_model=SubmittedJsonResponse)
+def get_read_submitted_json(
+    *,
+    db: Session = Depends(get_db),
+    read_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Get submitted_json for a specific read.
+    """
+    read = db.query(Read).filter(Read.id == read_id).first()
+    if not read:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Read not found",
+        )
+    if not read.submitted_json:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Submitted JSON not found for this read",
+        )
+    return {"submitted_json": read.submitted_json}
 
 
 @router.get("/{read_id}", response_model=ReadSchema)
