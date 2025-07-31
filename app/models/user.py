@@ -4,6 +4,7 @@ from typing import List
 
 from sqlalchemy import Boolean, Column, DateTime, String, ARRAY
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.db.session import Base
 

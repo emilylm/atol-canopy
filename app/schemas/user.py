@@ -55,6 +55,16 @@ class Token(BaseModel):
     token_type: str
 
 
+class TokenResponse(Token):
+    """Schema for JWT token response with refresh token."""
+    refresh_token: str
+
+
+class RefreshRequest(BaseModel):
+    """Schema for refresh token request."""
+    refresh_token: str
+
+
 class TokenPayload(BaseModel):
     """Schema for JWT token payload."""
     sub: Optional[str] = None

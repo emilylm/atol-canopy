@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, Union
+import hashlib
+import secrets
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -62,3 +64,29 @@ def get_password_hash(password: str) -> str:
         str: Hashed password
     """
     return pwd_context.hash(password)
+
+
+def generate_refresh_token(length: int = 32) -> str:
+    """
+    Generate a secure random string for use as a refresh token.
+    
+    Args:
+        length: Length of the token in bytes
+        
+    Returns:
+        str: Secure random string
+    """
+    return secrets.token_urlsafe(length)
+
+
+def hash_token(token: str) -> str:
+    """
+    Hash a token for secure storage in the database.
+    
+    Args:
+        token: Plain text token
+        
+    Returns:
+        str: Hashed token
+    """
+    return hashlib.sha256(token.encode()).hexdigest()
