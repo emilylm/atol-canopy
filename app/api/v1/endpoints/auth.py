@@ -45,7 +45,7 @@ def login_access_token(
         )
     
     # Create access token with expiration
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": create_access_token(
             user.id, expires_delta=access_token_expires

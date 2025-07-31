@@ -169,8 +169,8 @@ pip install -r requirements.txt
 
 3. Set up environment variables:
 ```bash
-export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/atol_db
-export SECRET_KEY=your_secret_key
+export DATABASE_URI=postgresql://postgres:postgres@localhost:5432/atol_db
+export JWT_SECRET_KEY=your_secret_key
 ```
 
 4. Run the application:
