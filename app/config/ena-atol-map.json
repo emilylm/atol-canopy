@@ -1,0 +1,46 @@
+{
+  "sample": {
+    "tax_id": "organism.taxon_id",
+    "culture_or_strain_id": "organism.culture_or_strain_id",
+    "specimen_voucher": "specimen_voucer",
+    "identified_by": "identified_by",
+    "lifestage": "lifestage",
+    "sex": "sex",
+    "organism part": "organism_part",
+    "geographic location (region and locality)": "region_and_locality",
+    "geographic location (country and/or sea)": "country_or_sea",
+    "geographic location (latitude)": "latitude",
+    "geographic location (longitude)": "longitude",
+    "elevation": "elevation",
+    "depth": "depth",
+    "habitat": "habitat",
+    "sample collection method": "collection_method",
+    "collection date": "collection_date",
+    "collected_by": "collected_by",
+    "collecting institution": "collecting_institution",
+    "alias": "sample_name",
+    "specimen_id": "specimen_id",
+    "title": "title",
+    "sample same as": "sample_same_as",
+    "sample derived from": "sample_derived_from",
+    "tolid": "tolid",
+    "project name": "project_name"
+  },
+  "experiment": {
+    "design_description": "design_description",
+    "alias": "bpa_library_id",
+    "library_strategy": "library_strategy",
+    "library_source": "library_source",
+    "insert_size": "insert_size",
+    "library_construction_protocol": "library_construction_protocol",
+    "library_selection": "library_selection",
+    "library_layout": "library_layout",
+    "instrument_model": "instrument_model",
+    "platform": "platform"
+  },
+  "run": {
+    "alias": "bpa_dataset_id",
+    "file_name": "file_name",
+    "file_format": "file_format"
+  }
+}
