@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     samples,
     users,
     xml_export,
+    xml_export_experiments,
 )
 
 # Main API router
@@ -33,5 +34,6 @@ api_router.include_router(genome_notes.router, prefix="/genome-notes", tags=["ge
 
 # XML export endpoints
 api_router.include_router(xml_export.router, prefix="/xml-export", tags=["xml-export"])
+api_router.include_router(xml_export_experiments.router, prefix="/xml-export", tags=["xml-export"])
 # api_router.include_router(read_router, prefix="/reads", tags=["reads"])
 # api_router.include_router(genome_note_router, prefix="/genome-notes", tags=["genome-notes"])

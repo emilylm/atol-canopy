@@ -14,8 +14,9 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_active_user, get_db, require_role
 from app.models.sample import SampleSubmitted
+from app.models.experiment import ExperimentSubmitted
 from app.models.user import User
-from app.utils.xml_generator import generate_sample_xml, generate_samples_xml
+from app.utils.xml_generator import generate_sample_xml, generate_samples_xml, generate_experiment_xml, generate_experiments_xml
 
 router = APIRouter()
 
