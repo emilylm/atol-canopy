@@ -2,7 +2,7 @@ import uuid
 from typing import Any, List, Dict, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import (
@@ -12,6 +12,9 @@ from app.core.dependencies import (
     require_role,
 )
 from app.models.organism import Organism
+from app.models.sample import Sample, SampleSubmitted
+from app.models.experiment import Experiment, ExperimentSubmitted
+from app.models.read import Read
 from app.models.user import User
 from app.schemas.organism import (
     Organism as OrganismSchema,
@@ -19,6 +22,7 @@ from app.schemas.organism import (
     OrganismUpdate,
 )
 from app.schemas.bulk_import import BulkOrganismImport, BulkImportResponse
+from app.schemas.aggregate import OrganismSubmittedJsonResponse, SampleSubmittedJson, ExperimentSubmittedJson, ReadSubmittedJson
 
 router = APIRouter()
 
@@ -36,6 +40,89 @@ def read_organisms(
     # All users can read organisms
     organisms = db.query(Organism).offset(skip).limit(limit).all()
     return organisms
+
+
+@router.get("/grouping-key/{organism_grouping_key}/submitted-json", response_model=OrganismSubmittedJsonResponse)
+def get_organism_submitted_json(
+    *,
+    db: Session = Depends(get_db),
+    organism_grouping_key: str,
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Get all submitted_json data for samples, experiments, and reads related to a specific organism_grouping_key.
+    """
+    # Find the organism by grouping key
+    organism = db.query(Organism).filter(Organism.organism_grouping_key == organism_grouping_key).first()
+    if not organism:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Organism with grouping key '{organism_grouping_key}' not found",
+        )
+    
+    # Initialize response object
+    response = OrganismSubmittedJsonResponse(
+        organism_id=organism.id,
+        organism_grouping_key=organism.organism_grouping_key,
+        scientific_name=organism.scientific_name,
+        common_name=organism.common_name,
+        samples=[],
+        experiments=[],
+        reads=[]
+    )
+    
+    # Get samples for this organism
+    samples = db.query(Sample).filter(Sample.organism_id == organism.id).all()
+    sample_ids = [sample.id for sample in samples]
+    
+    # Get sample submitted data
+    if sample_ids:
+        sample_submitted_records = db.query(SampleSubmitted).filter(SampleSubmitted.sample_id.in_(sample_ids)).all()
+        for record in sample_submitted_records:
+            # Find the corresponding sample to get the bpa_sample_id
+            sample = next((s for s in samples if s.id == record.sample_id), None)
+            bpa_sample_id = sample.bpa_sample_id if sample else None
+            
+            response.samples.append(SampleSubmittedJson(
+                sample_id=record.sample_id,
+                bpa_sample_id=bpa_sample_id,
+                submitted_json=record.submitted_json,
+                status=record.status
+            ))
+    
+    # Get experiments for these samples
+    if sample_ids:
+        experiments = db.query(Experiment).filter(Experiment.sample_id.in_(sample_ids)).all()
+        experiment_ids = [experiment.id for experiment in experiments]
+        
+        # Get experiment submitted data
+        if experiment_ids:
+            experiment_submitted_records = db.query(ExperimentSubmitted).filter(ExperimentSubmitted.experiment_id.in_(experiment_ids)).all()
+            for record in experiment_submitted_records:
+                # Find the corresponding experiment to get the bpa_package_id
+                experiment = next((e for e in experiments if e.id == record.experiment_id), None)
+                bpa_package_id = experiment.bpa_package_id if experiment else None
+                
+                response.experiments.append(ExperimentSubmittedJson(
+                    experiment_id=record.experiment_id,
+                    bpa_package_id=bpa_package_id,
+                    submitted_json=record.submitted_json,
+                    status=record.status
+                ))
+            
+            # Get reads for these experiments
+            reads = db.query(Read).filter(Read.experiment_id.in_(experiment_ids)).all()
+            for read in reads:
+                if read.submitted_json:  # Only include reads that have submitted_json
+                    response.reads.append(ReadSubmittedJson(
+                        read_id=read.id,
+                        experiment_id=read.experiment_id,
+                        file_name=read.file_name,
+                        submitted_json=read.submitted_json,
+                        status=read.status
+                    ))
+    
+    return response
 
 
 @router.post("/", response_model=OrganismSchema)
