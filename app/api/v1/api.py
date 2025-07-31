@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     reads,
     samples,
     users,
+    xml_export,
 )
 
 # Main API router
@@ -29,5 +30,8 @@ api_router.include_router(bpa_initiatives.router, prefix="/bpa-initiatives", tag
 api_router.include_router(bioprojects.router, prefix="/bioprojects", tags=["bioprojects"])
 api_router.include_router(reads.router, prefix="/reads", tags=["reads"])
 api_router.include_router(genome_notes.router, prefix="/genome-notes", tags=["genome-notes"])
+
+# XML export endpoints
+api_router.include_router(xml_export.router, prefix="/xml-export", tags=["xml-export"])
 # api_router.include_router(read_router, prefix="/reads", tags=["reads"])
 # api_router.include_router(genome_note_router, prefix="/genome-notes", tags=["genome-notes"])
