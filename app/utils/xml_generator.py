@@ -672,21 +672,20 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
         # Add FILES section
         files = ET.SubElement(data_block, "FILES")
         
-        # Add FILE element(s)
-        if "files" in submitted_json and submitted_json["files"]:
-            for file_data in submitted_json["files"]:
-                file_element = ET.SubElement(files, "FILE")
-                
-                # Add file attributes
-                if "checksum" in file_data:
-                    file_element.set("checksum", file_data["checksum"])
-                    file_element.set("checksum_method", file_data.get("checksum_method", "MD5"))
-                
-                if "file_name" in file_data:
-                    file_element.set("filename", file_data["file_name"])
-                
-                if "file_type" in file_data:
-                    file_element.set("filetype", file_data["file_type"])
+        # Add FILE element
+        # First check if files are in a nested 'files' array
+        file_element = ET.SubElement(files, "FILE")
+        
+        # Add file attributes from top-level submitted_json
+        if "file_checksum" in submitted_json:
+            file_element.set("checksum", submitted_json["file_checksum"])
+            file_element.set("checksum_method", "MD5")
+        
+        if "file_name" in submitted_json:
+            file_element.set("filename", submitted_json["file_name"])
+            
+        if "file_format" in submitted_json:
+            file_element.set("filetype", submitted_json["file_format"])
     
     # Pretty-print the XML
     rough_string = ET.tostring(run_set, 'utf-8')
