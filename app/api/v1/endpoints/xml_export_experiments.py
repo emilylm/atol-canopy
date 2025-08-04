@@ -13,8 +13,9 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_active_user, get_db
 from app.models.experiment import Experiment, ExperimentSubmitted
+from app.models.read import Read
 from app.models.user import User
-from app.utils.xml_generator import generate_experiment_xml, generate_experiments_xml
+from app.utils.xml_generator import generate_experiment_xml, generate_experiments_xml, generate_runs_xml
 
 router = APIRouter()
 

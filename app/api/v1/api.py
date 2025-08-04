@@ -5,6 +5,7 @@ from app.api.v1.endpoints import (
     auth,
     bioprojects,
     bpa_initiatives,
+    experiment_reads_xml,
     experiments,
     genome_notes,
     organisms,
@@ -13,6 +14,7 @@ from app.api.v1.endpoints import (
     users,
     xml_export,
     xml_export_experiments,
+    xml_export_runs,
 )
 
 # Main API router
@@ -35,5 +37,7 @@ api_router.include_router(genome_notes.router, prefix="/genome-notes", tags=["ge
 # XML export endpoints
 api_router.include_router(xml_export.router, prefix="/xml-export", tags=["xml-export"])
 api_router.include_router(xml_export_experiments.router, prefix="/xml-export", tags=["xml-export"])
+api_router.include_router(xml_export_runs.router, prefix="/xml-export", tags=["xml-export"])
+api_router.include_router(experiment_reads_xml.router, prefix="", tags=["xml-export"])
 # api_router.include_router(read_router, prefix="/reads", tags=["reads"])
 # api_router.include_router(genome_note_router, prefix="/genome-notes", tags=["genome-notes"])
