@@ -50,40 +50,40 @@ class Sample(SampleInDBBase):
     pass
 
 
-# Base SampleSubmitted schema
-class SampleSubmittedBase(BaseModel):
-    """Base SampleSubmitted schema with common attributes."""
+# Base SampleSubmission schema
+class SampleSubmissionBase(BaseModel):
+    """Base SampleSubmission schema with common attributes."""
     organism_id: Optional[UUID] = None
     status: SubmissionStatus = Field(default=SubmissionStatus.DRAFT, description="Status of the submission")
 
 
 # Schema for creating a new sample submission
-class SampleSubmittedCreate(SampleSubmittedBase):
+class SampleSubmissionCreate(SampleSubmissionBase):
     """Schema for creating a new sample submission."""
     sample_id: Optional[UUID] = None
     internal_json: Optional[Dict] = None
-    submitted_json: Optional[Dict] = None
-    submitted_at: Optional[datetime] = None
+    submission_json: Optional[Dict] = None
+    submission_at: Optional[datetime] = None
 
 
 # Schema for updating an existing sample submission
-class SampleSubmittedUpdate(BaseModel):
+class SampleSubmissionUpdate(BaseModel):
     """Schema for updating an existing sample submission."""
     organism_id: Optional[UUID] = None
     internal_json: Optional[Dict] = None
-    submitted_json: Optional[Dict] = None
+    submission_json: Optional[Dict] = None
     status: Optional[SubmissionStatus] = None
-    submitted_at: Optional[datetime] = None
+    submission_at: Optional[datetime] = None
 
 
 # Schema for sample submission in DB
-class SampleSubmittedInDBBase(SampleSubmittedBase):
-    """Base schema for SampleSubmitted in DB, includes id and timestamps."""
+class SampleSubmissionInDBBase(SampleSubmissionBase):
+    """Base schema for SampleSubmission in DB, includes id and timestamps."""
     id: UUID
     sample_id: Optional[UUID] = None
     internal_json: Optional[Dict] = None
-    submitted_json: Optional[Dict] = None
-    submitted_at: Optional[datetime] = None
+    submission_json: Optional[Dict] = None
+    submission_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -92,7 +92,7 @@ class SampleSubmittedInDBBase(SampleSubmittedBase):
 
 
 # Schema for returning sample submission information
-class SampleSubmitted(SampleSubmittedInDBBase):
+class SampleSubmission(SampleSubmissionInDBBase):
     """Schema for returning sample submission information."""
     pass
 

@@ -4,8 +4,8 @@ Standalone script to import BPA data into the database.
 
 This script loads data from JSON files and creates:
 1. Organism entities
-2. Sample and sample_submitted entities
-3. Experiment and experiment_submitted entities
+2. Sample and sample_submission entities
+3. Experiment and experiment_submission entities
 
 Usage:
     python import_bpa_data_standalone.py
@@ -123,7 +123,7 @@ def import_samples(conn, samples_data):
     print(f"Importing {len(samples_data)} samples...")
     
     created_samples_count = 0
-    created_submitted_count = 0
+    created_submission_count = 0
     skipped_count = 0
     
     cursor = conn.cursor()
@@ -167,10 +167,10 @@ def import_samples(conn, samples_data):
             )
 
 
-            # Create sample_submitted record
+            # Create sample_submission record
             cursor.execute(
                 """
-                INSERT INTO sample_submitted (id, sample_id, organism_id, internal_json)
+                INSERT INTO sample_submission (id, sample_id, organism_id, internal_json)
                 VALUES (%s, %s, %s, %s)
                 """,
                 (
@@ -183,7 +183,7 @@ def import_samples(conn, samples_data):
             
             conn.commit()
             created_samples_count += 1
-            created_submitted_count += 1
+            created_submission_count += 1
             
             if created_samples_count % 100 == 0:
                 print(f"Created {created_samples_count} samples...")
@@ -194,7 +194,7 @@ def import_samples(conn, samples_data):
             skipped_count += 1
     
     print(f"Sample import complete. Created samples: {created_samples_count}, "
-          f"Created submitted records: {created_submitted_count}, Skipped: {skipped_count}")
+          f"Created submission records: {created_submission_count}, Skipped: {skipped_count}")
     return created_samples_count
 
 
@@ -209,7 +209,7 @@ def import_experiments(conn, experiments_data):
     print(f"Importing experiments from {len(experiments_data)} experiment packages...")
     
     created_experiments_count = 0
-    created_submitted_count = 0
+    created_submission_count = 0
     skipped_count = 0
     
     cursor = conn.cursor()
@@ -249,10 +249,10 @@ def import_experiments(conn, experiments_data):
                 )
             )
             
-            # Create experiment_submitted record
+            # Create experiment_submission record
             cursor.execute(
                 """
-                INSERT INTO experiment_submitted (
+                INSERT INTO experiment_submission (
                     id, experiment_id, sample_id, internal_json
                 )
                 VALUES (%s, %s, %s, %s)
@@ -267,7 +267,7 @@ def import_experiments(conn, experiments_data):
             
             conn.commit()
             created_experiments_count += 1
-            created_submitted_count += 1
+            created_submission_count += 1
             
             if created_experiments_count % 100 == 0:
                 print(f"Created {created_experiments_count} experiments...")
@@ -278,7 +278,7 @@ def import_experiments(conn, experiments_data):
             skipped_count += 1
     
     print(f"Experiment import complete. Created experiments: {created_experiments_count}, "
-          f"Created submitted records: {created_submitted_count}, Skipped: {skipped_count}")
+          f"Created submission records: {created_submission_count}, Skipped: {skipped_count}")
     
     return created_experiments_count
 

@@ -8,13 +8,13 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 
-def generate_run_xml(submitted_json: Dict[str, Any], alias: str, center_name: str = "AToL",
+def generate_run_xml(submission_json: Dict[str, Any], alias: str, center_name: str = "AToL",
                     broker_name: str = "AToL", accession: Optional[str] = None) -> str:
     """
-    Generate ENA run XML from submitted JSON data.
+    Generate ENA run XML from submission JSON data.
     
     Args:
-        submitted_json: Dictionary containing the run data in the internal format
+        submission_json: Dictionary containing the run data in the internal format
         alias: Run alias (typically the run ID or BPA dataset ID)
         center_name: Center name for the submission
         broker_name: Broker name for the submission
@@ -51,7 +51,7 @@ def generate_run_xml(submitted_json: Dict[str, Any], alias: str, center_name: st
     
     # Add EXPERIMENT_REF section
     experiment_ref = ET.SubElement(run, "EXPERIMENT_REF")
-    experiment_accession = submitted_json.get("experiment_accession")
+    experiment_accession = submission_json.get("experiment_accession")
     
     if experiment_accession:
         experiment_ref.set("accession", experiment_accession)
@@ -63,14 +63,14 @@ def generate_run_xml(submitted_json: Dict[str, Any], alias: str, center_name: st
     
     # Add PLATFORM section
     platform = ET.SubElement(run, "PLATFORM")
-    platform_type = submitted_json.get("platform")
+    platform_type = submission_json.get("platform")
     
     if platform_type:
         platform_element = ET.SubElement(platform, platform_type)
         
         # Add INSTRUMENT_MODEL
         instrument_model = ET.SubElement(platform_element, "INSTRUMENT_MODEL")
-        instrument_model.text = submitted_json.get("instrument_model")
+        instrument_model.text = submission_json.get("instrument_model")
     
     # Add DATA_BLOCK section
     data_block = ET.SubElement(run, "DATA_BLOCK")
@@ -79,8 +79,8 @@ def generate_run_xml(submitted_json: Dict[str, Any], alias: str, center_name: st
     files = ET.SubElement(data_block, "FILES")
     
     # Add FILE element(s)
-    if "files" in submitted_json and submitted_json["files"]:
-        for file_data in submitted_json["files"]:
+    if "files" in submission_json and submission_json["files"]:
+        for file_data in submission_json["files"]:
             file_element = ET.SubElement(files, "FILE")
             
             # Add file attributes
@@ -109,7 +109,7 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
     
     Args:
         runs_data: List of dictionaries, each containing:
-            - submitted_json: Dictionary with the run data
+            - submission_json: Dictionary with the run data
             - alias: Run alias
             - accession: Optional accession number
             
@@ -121,7 +121,7 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
     
     # Process each run
     for run_data in runs_data:
-        submitted_json = run_data["submitted_json"]
+        submission_json = run_data["submission_json"]
         alias = run_data["alias"]
         accession = run_data.get("accession")
         center_name = run_data.get("center_name", "AToL")
@@ -152,7 +152,7 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
         
         # Add EXPERIMENT_REF section
         experiment_ref = ET.SubElement(run, "EXPERIMENT_REF")
-        experiment_accession = submitted_json.get("experiment_accession")
+        experiment_accession = submission_json.get("experiment_accession")
         
         if experiment_accession:
             experiment_ref.set("accession", experiment_accession)
@@ -164,14 +164,14 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
         
         # Add PLATFORM section
         platform = ET.SubElement(run, "PLATFORM")
-        platform_type = submitted_json.get("platform")
+        platform_type = submission_json.get("platform")
         
         if platform_type:
             platform_element = ET.SubElement(platform, platform_type)
             
             # Add INSTRUMENT_MODEL
             instrument_model = ET.SubElement(platform_element, "INSTRUMENT_MODEL")
-            instrument_model.text = submitted_json.get("instrument_model")
+            instrument_model.text = submission_json.get("instrument_model")
         
         # Add DATA_BLOCK section
         data_block = ET.SubElement(run, "DATA_BLOCK")
@@ -180,8 +180,8 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
         files = ET.SubElement(data_block, "FILES")
         
         # Add FILE element(s)
-        if "files" in submitted_json and submitted_json["files"]:
-            for file_data in submitted_json["files"]:
+        if "files" in submission_json and submission_json["files"]:
+            for file_data in submission_json["files"]:
                 file_element = ET.SubElement(files, "FILE")
                 
                 # Add file attributes

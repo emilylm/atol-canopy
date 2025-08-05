@@ -31,13 +31,13 @@ class Experiment(Base):
     sample = relationship("Sample", backref="experiments")
 
 
-class ExperimentSubmitted(Base):
+class ExperimentSubmission(Base):
     """
-    ExperimentSubmitted model for storing experiment data staged for submission to ENA.
+    ExperimentSubmission model for storing experiment data staged for submission to ENA.
     
-    This model corresponds to the 'experiment_submitted' table in the database.
+    This model corresponds to the 'experiment_submission' table in the database.
     """
-    __tablename__ = "experiment_submitted"
+    __tablename__ = "experiment_submission"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=True)
@@ -45,14 +45,14 @@ class ExperimentSubmitted(Base):
     run_accession = Column(Text, nullable=True)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=True)
     internal_json = Column(JSONB, nullable=True)
-    submitted_json = Column(JSONB, nullable=True)
-    submitted_at = Column(DateTime, nullable=True)
-    status = Column(SQLAlchemyEnum("draft", "ready", "submitted", "rejected", name="submission_status"), nullable=False, default="draft")
+    submission_json = Column(JSONB, nullable=True)
+    submission_at = Column(DateTime, nullable=True)
+    status = Column(SQLAlchemyEnum("draft", "ready", "submission", "rejected", name="submission_status"), nullable=False, default="draft")
     created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
-    experiment = relationship("Experiment", backref="submitted_records")
+    experiment = relationship("Experiment", backref="submission_records")
     sample = relationship("Sample")
 
 

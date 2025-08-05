@@ -30,26 +30,26 @@ class Sample(Base):
     organism = relationship("Organism", backref="samples")
 
 
-class SampleSubmitted(Base):
+class SampleSubmission(Base):
     """
-    SampleSubmitted model for storing sample data staged for submission to ENA.
+    SampleSubmission model for storing sample data staged for submission to ENA.
     
-    This model corresponds to the 'sample_submitted' table in the database.
+    This model corresponds to the 'sample_submission' table in the database.
     """
-    __tablename__ = "sample_submitted"
+    __tablename__ = "sample_submission"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=True)
     organism_id = Column(UUID(as_uuid=True), ForeignKey("organism.id"), nullable=True)
     internal_json = Column(JSONB, nullable=True)
-    submitted_json = Column(JSONB, nullable=True)
-    submitted_at = Column(DateTime, nullable=True)
-    status = Column(SQLAlchemyEnum("draft", "ready", "submitted", "rejected", name="submission_status"), nullable=False, default="draft")
+    submission_json = Column(JSONB, nullable=True)
+    submission_at = Column(DateTime, nullable=True)
+    status = Column(SQLAlchemyEnum("draft", "ready", "submission", "rejected", name="submission_status"), nullable=False, default="draft")
     created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
-    sample = relationship("Sample", backref="submitted_records")
+    sample = relationship("Sample", backref="submission_records")
     organism = relationship("Organism")
 
 

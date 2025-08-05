@@ -47,7 +47,7 @@
     "sample_custodian",
     "indigenous_location",
     "collection_permit",
-    "sample_submitted",
+    "sample_submission",
     "sample_submission_date",
     "data_context",
     "bioplatforma_project_code",

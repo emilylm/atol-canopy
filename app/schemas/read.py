@@ -19,8 +19,8 @@ class ReadBase(BaseModel):
     read_access_date: Optional[str] = None
     bioplatforms_url: Optional[str] = None
     internal_json: Optional[Dict[str, Any]] = None
-    submitted_json: Optional[Dict[str, Any]] = None
-    status: Literal["draft", "submitted", "rejected"] = "draft"
+    submission_json: Optional[Dict[str, Any]] = None
+    status: Literal["draft", "submission", "rejected"] = "draft"
 
 
 # Schema for creating a new Read
@@ -43,8 +43,8 @@ class ReadUpdate(BaseModel):
     read_access_date: Optional[str] = None
     bioplatforms_url: Optional[str] = None
     internal_json: Optional[Dict[str, Any]] = None
-    submitted_json: Optional[Dict[str, Any]] = None
-    status: Optional[Literal["draft", "submitted", "rejected"]] = None
+    submission_json: Optional[Dict[str, Any]] = None
+    status: Optional[Literal["draft", "submission", "rejected"]] = None
 
 
 # Schema for Read in DB

@@ -17,7 +17,7 @@ from app.schemas.read import (
     ReadCreate,
     ReadUpdate,
 )
-from app.schemas.common import SubmittedJsonResponse
+from app.schemas.common import SubmissionJsonResponse
 
 router = APIRouter()
 
@@ -73,15 +73,15 @@ def create_read(
     return read
 
 
-@router.get("/{read_id}/submitted-json", response_model=SubmittedJsonResponse)
-def get_read_submitted_json(
+@router.get("/{read_id}/submission-json", response_model=SubmissionJsonResponse)
+def get_read_submission_json(
     *,
     db: Session = Depends(get_db),
     read_id: UUID,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
-    Get submitted_json for a specific read.
+    Get submission_json for a specific read.
     """
     read = db.query(Read).filter(Read.id == read_id).first()
     if not read:
@@ -89,12 +89,12 @@ def get_read_submitted_json(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Read not found",
         )
-    if not read.submitted_json:
+    if not read.submission_json:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Submitted JSON not found for this read",
+            detail="Submission JSON not found for this read",
         )
-    return {"submitted_json": read.submitted_json}
+    return {"submission_json": read.submission_json}
 
 
 @router.get("/{read_id}", response_model=ReadSchema)

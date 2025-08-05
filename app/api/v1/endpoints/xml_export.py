@@ -13,8 +13,8 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_active_user, get_db, require_role
-from app.models.sample import SampleSubmitted
-from app.models.experiment import ExperimentSubmitted
+from app.models.sample import SampleSubmission
+from app.models.experiment import ExperimentSubmission
 from app.models.user import User
 from app.utils.xml_generator import generate_sample_xml, generate_samples_xml, generate_experiment_xml, generate_experiments_xml
 
@@ -33,28 +33,28 @@ def get_sample_xml(
     
     Returns the XML representation of the sample submission data.
     """
-    # Find the submitted record for this sample
-    sample_submitted = db.query(SampleSubmitted).filter(
-        SampleSubmitted.sample_id == sample_id
+    # Find the submission record for this sample
+    sample_submission = db.query(SampleSubmission).filter(
+        SampleSubmission.sample_id == sample_id
     ).first()
     
-    if not sample_submitted:
+    if not sample_submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sample submitted data not found",
+            detail="Sample submission data not found",
         )
     
-    if not sample_submitted.submitted_json:
+    if not sample_submission.submission_json:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Sample has no submitted_json data",
+            detail="Sample has no submission_json data",
         )
     
     # Generate XML using the utility function
     xml_content = generate_sample_xml(
-        submitted_json=sample_submitted.submitted_json,
+        submission_json=sample_submission.submission_json,
         alias=f"sample_{sample_id}",  # You might want to use a more meaningful alias
-        accession=sample_submitted.sample.sample_accession if sample_submitted.sample and sample_submitted.sample.sample_accession else None
+        accession=sample_submission.sample.sample_accession if sample_submission.sample and sample_submission.sample.sample_accession else None
     )
     
     return xml_content
@@ -75,14 +75,14 @@ def get_samples_xml(
     If no sample_ids are provided, all samples with the specified status are included.
     """
     # Build the query
-    query = db.query(SampleSubmitted)
+    query = db.query(SampleSubmission)
     
     # Apply filters if provided
     if sample_ids:
-        query = query.filter(SampleSubmitted.sample_id.in_(sample_ids))
+        query = query.filter(SampleSubmission.sample_id.in_(sample_ids))
     
     if status:
-        query = query.filter(SampleSubmitted.status == status)
+        query = query.filter(SampleSubmission.status == status)
     
     # Get the samples
     samples = query.all()
@@ -90,13 +90,13 @@ def get_samples_xml(
     if not samples:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No sample submitted data found matching the criteria",
+            detail="No sample submission data found matching the criteria",
         )
     
     # Prepare the data for XML generation
     samples_data = []
     for sample in samples:
-        if not sample.submitted_json:
+        if not sample.submission_json:
             continue
             
         # Get the sample accession if available
@@ -110,7 +110,7 @@ def get_samples_xml(
             alias = sample.sample.bpa_sample_id
             
         samples_data.append({
-            "submitted_json": sample.submitted_json,
+            "submission_json": sample.submission_json,
             "alias": alias,
             "accession": accession
         })
@@ -118,7 +118,7 @@ def get_samples_xml(
     if not samples_data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="None of the selected samples have submitted_json data",
+            detail="None of the selected samples have submission_json data",
         )
     
     # Generate XML using the utility function
@@ -156,28 +156,28 @@ def get_experiment_samples_xml(
             detail=f"Experiment with bpa_package_id {bpa_package_id} has no associated sample"
         )
     
-    # Find the submitted records for this sample
-    sample_submitted = db.query(SampleSubmitted).filter(
-        SampleSubmitted.sample_id == experiment.sample_id
+    # Find the submission records for this sample
+    sample_submission = db.query(SampleSubmission).filter(
+        SampleSubmission.sample_id == experiment.sample_id
     ).first()
     
-    if not sample_submitted:
+    if not sample_submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No submitted sample records found for experiment with bpa_package_id {bpa_package_id}"
+            detail=f"No submission sample records found for experiment with bpa_package_id {bpa_package_id}"
         )
     
-    if not sample_submitted.submitted_json:
+    if not sample_submission.submission_json:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Sample has no submitted_json data",
+            detail="Sample has no submission_json data",
         )
     
     # Generate XML using the utility function
     xml_content = generate_sample_xml(
-        submitted_json=sample_submitted.submitted_json,
-        alias=sample_submitted.sample.bpa_sample_id if sample_submitted.sample else f"sample_{sample_submitted.sample_id}",
-        accession=sample_submitted.sample.sample_accession if sample_submitted.sample and sample_submitted.sample.sample_accession else None
+        submission_json=sample_submission.submission_json,
+        alias=sample_submission.sample.bpa_sample_id if sample_submission.sample else f"sample_{sample_submission.sample_id}",
+        accession=sample_submission.sample.sample_accession if sample_submission.sample and sample_submission.sample.sample_accession else None
     )
     
     return xml_content

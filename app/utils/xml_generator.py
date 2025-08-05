@@ -9,13 +9,13 @@ import xml.dom.minidom as minidom
 from typing import Dict, Any, List, Optional
 
 
-def generate_sample_xml(submitted_json: Dict[str, Any], alias: str, center_name: str = "AToL", 
+def generate_sample_xml(submission_json: Dict[str, Any], alias: str, center_name: str = "AToL", 
                        broker_name: str = "AToL", accession: Optional[str] = None) -> str:
     """
-    Generate ENA sample XML from submitted JSON data.
+    Generate ENA sample XML from submission JSON data.
     
     Args:
-        submitted_json: Dictionary containing the sample data in the internal format
+        submission_json: Dictionary containing the sample data in the internal format
         alias: Sample alias (typically the sample ID)
         center_name: Center name for the submission
         broker_name: Broker name for the submission
@@ -47,27 +47,27 @@ def generate_sample_xml(submitted_json: Dict[str, Any], alias: str, center_name:
     
     # Always add title (required field)
     title = ET.SubElement(sample, "TITLE")
-    title.text = submitted_json.get("title", f"{alias} sample")
+    title.text = submission_json.get("title", f"{alias} sample")
     
     # Always add sample name with taxonomy information (required section)
     sample_name = ET.SubElement(sample, "SAMPLE_NAME")
     
     # Add TAXON_ID (required field)
     taxon_id = ET.SubElement(sample_name, "TAXON_ID")
-    taxon_id.text = str(submitted_json.get("taxon_id", "12908"))  # Default to 'unidentified organism' if not provided
+    taxon_id.text = str(submission_json.get("taxon_id", "12908"))  # Default to 'unidentified organism' if not provided
     
     # Add SCIENTIFIC_NAME (required field)
     scientific_name = ET.SubElement(sample_name, "SCIENTIFIC_NAME")
-    scientific_name.text = submitted_json.get("scientific_name", "unidentified organism")
+    scientific_name.text = submission_json.get("scientific_name", "unidentified organism")
     
     # Always add COMMON_NAME (can be empty)
     common_name = ET.SubElement(sample_name, "COMMON_NAME")
-    common_name.text = submitted_json.get("common_name", "")
+    common_name.text = submission_json.get("common_name", "")
     
     # Add description if available
-    if "description" in submitted_json:
+    if "description" in submission_json:
         description = ET.SubElement(sample, "DESCRIPTION")
-        description.text = submitted_json["description"]
+        description.text = submission_json["description"]
     
     # Add sample attributes
     sample_attributes = ET.SubElement(sample, "SAMPLE_ATTRIBUTES")
@@ -76,7 +76,7 @@ def generate_sample_xml(submitted_json: Dict[str, Any], alias: str, center_name:
     skip_keys = ["title", "taxon_id", "scientific_name", "common_name", "description"]
     
     # Process all other keys as sample attributes
-    for key, value in submitted_json.items():
+    for key, value in submission_json.items():
         if key in skip_keys:
             continue
             
@@ -120,7 +120,7 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
     
     Args:
         samples_data: List of dictionaries, each containing:
-            - submitted_json: Dictionary with sample data
+            - submission_json: Dictionary with sample data
             - alias: Sample alias
             - center_name: (Optional) Center name
             - broker_name: (Optional) Broker name
@@ -134,7 +134,7 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
     
     # Add each sample to the set
     for sample_data in samples_data:
-        submitted_json = sample_data["submitted_json"]
+        submission_json = sample_data["submission_json"]
         alias = sample_data["alias"]
         center_name = sample_data.get("center_name", "AToL")
         broker_name = sample_data.get("broker_name", "AToL")
@@ -160,27 +160,27 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
         
         # Always add title (required field)
         title = ET.SubElement(sample, "TITLE")
-        title.text = submitted_json.get("title", f"{alias} sample")
+        title.text = submission_json.get("title", f"{alias} sample")
         
         # Always add sample name with taxonomy information (required section)
         sample_name = ET.SubElement(sample, "SAMPLE_NAME")
         
         # Add TAXON_ID (required field)
         taxon_id = ET.SubElement(sample_name, "TAXON_ID")
-        taxon_id.text = str(submitted_json.get("taxon_id", "12908"))  # Default to 'unidentified organism' if not provided
+        taxon_id.text = str(submission_json.get("taxon_id", "12908"))  # Default to 'unidentified organism' if not provided
         
         # Add SCIENTIFIC_NAME (required field)
         scientific_name = ET.SubElement(sample_name, "SCIENTIFIC_NAME")
-        scientific_name.text = submitted_json.get("scientific_name", "unidentified organism")
+        scientific_name.text = submission_json.get("scientific_name", "unidentified organism")
         
         # Always add COMMON_NAME (can be empty)
         common_name = ET.SubElement(sample_name, "COMMON_NAME")
-        common_name.text = submitted_json.get("common_name", "")
+        common_name.text = submission_json.get("common_name", "")
         
         # Add description if available
-        if "description" in submitted_json:
+        if "description" in submission_json:
             description = ET.SubElement(sample, "DESCRIPTION")
-            description.text = submitted_json["description"]
+            description.text = submission_json["description"]
         
         # Add sample attributes
         sample_attributes = ET.SubElement(sample, "SAMPLE_ATTRIBUTES")
@@ -189,7 +189,7 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
         skip_keys = ["title", "taxon_id", "scientific_name", "common_name", "description"]
         
         # Process all other keys as sample attributes
-        for key, value in submitted_json.items():
+        for key, value in submission_json.items():
             if key in skip_keys:
                 continue
                 
@@ -227,13 +227,13 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
     return reparsed.toprettyxml(indent="  ")
 
 
-def generate_experiment_xml(submitted_json: Dict[str, Any], alias: str, center_name: str = "AToL",
+def generate_experiment_xml(submission_json: Dict[str, Any], alias: str, center_name: str = "AToL",
                           broker_name: str = "AToL", accession: Optional[str] = None) -> str:
     """
-    Generate ENA experiment XML from submitted JSON data.
+    Generate ENA experiment XML from submission JSON data.
     
     Args:
-        submitted_json: Dictionary containing the experiment data in the internal format
+        submission_json: Dictionary containing the experiment data in the internal format
         alias: Experiment alias (typically the experiment ID or BPA package ID)
         center_name: Center name for the submission
         broker_name: Broker name for the submission
@@ -265,80 +265,80 @@ def generate_experiment_xml(submitted_json: Dict[str, Any], alias: str, center_n
     
     # Add title
     title = ET.SubElement(experiment, "TITLE")
-    title.text = submitted_json.get("title", f"{alias} experiment")
+    title.text = submission_json.get("title", f"{alias} experiment")
     
     # Add study reference
     study_ref = ET.SubElement(experiment, "STUDY_REF")
-    if "study_accession" in submitted_json:
-        study_ref.set("accession", submitted_json["study_accession"])
+    if "study_accession" in submission_json:
+        study_ref.set("accession", submission_json["study_accession"])
     else:
-        study_ref.set("refname", submitted_json.get("study_refname", "AToL_study"))
+        study_ref.set("refname", submission_json.get("study_refname", "AToL_study"))
     
     # Add design section
     design = ET.SubElement(experiment, "DESIGN")
     
     # Add design description
     design_description = ET.SubElement(design, "DESIGN_DESCRIPTION")
-    design_description.text = submitted_json.get("design_description", "")
+    design_description.text = submission_json.get("design_description", "")
     
     # Add sample descriptor
     sample_descriptor = ET.SubElement(design, "SAMPLE_DESCRIPTOR")
-    if "sample_accession" in submitted_json:
-        sample_descriptor.set("accession", submitted_json["sample_accession"])
-    elif "sample_refname" in submitted_json:
-        sample_descriptor.set("refname", submitted_json["sample_refname"])
+    if "sample_accession" in submission_json:
+        sample_descriptor.set("accession", submission_json["sample_accession"])
+    elif "sample_refname" in submission_json:
+        sample_descriptor.set("refname", submission_json["sample_refname"])
     
     # Add library descriptor
     library_descriptor = ET.SubElement(design, "LIBRARY_DESCRIPTOR")
     
     # Add library name
     library_name = ET.SubElement(library_descriptor, "LIBRARY_NAME")
-    library_name.text = submitted_json.get("library_name", None)
+    library_name.text = submission_json.get("library_name", None)
     
     # Add library strategy
     library_strategy = ET.SubElement(library_descriptor, "LIBRARY_STRATEGY")
-    library_strategy.text = submitted_json.get("library_strategy", None)
+    library_strategy.text = submission_json.get("library_strategy", None)
     
     # Add library source
     library_source = ET.SubElement(library_descriptor, "LIBRARY_SOURCE")
-    library_source.text = submitted_json.get("library_source", None)
+    library_source.text = submission_json.get("library_source", None)
     
     # Add library selection
     library_selection = ET.SubElement(library_descriptor, "LIBRARY_SELECTION")
-    library_selection.text = submitted_json.get("library_selection", None)
+    library_selection.text = submission_json.get("library_selection", None)
     
     # Add library construction protocol
     library_construction_protocol = ET.SubElement(library_descriptor, "LIBRARY_CONSTRUCTION_PROTOCOL")
-    library_construction_protocol.text = submitted_json.get("library_construction_protocol", "unspecified")
+    library_construction_protocol.text = submission_json.get("library_construction_protocol", "unspecified")
 
     # Add insert size
     insert_size = ET.SubElement(library_descriptor, "INSERT_SIZE")
-    insert_size.text = submitted_json.get("insert_size", None)
+    insert_size.text = submission_json.get("insert_size", None)
 
     # Add library layout
     library_layout = ET.SubElement(library_descriptor, "LIBRARY_LAYOUT")
-    layout_type = submitted_json.get("library_layout", "SINGLE")
+    layout_type = submission_json.get("library_layout", "SINGLE")
     if layout_type == "PAIRED":
         ET.SubElement(library_layout, "PAIRED")
-        if "nominal_length" in submitted_json:
+        if "nominal_length" in submission_json:
             paired = library_layout.find("PAIRED")
-            paired.set("NOMINAL_LENGTH", str(submitted_json["nominal_length"]))
+            paired.set("NOMINAL_LENGTH", str(submission_json["nominal_length"]))
     else:
         ET.SubElement(library_layout, "SINGLE") #TODO check if this is correct
     
     # Add platform section
     platform = ET.SubElement(experiment, "PLATFORM")
-    platform_type = submitted_json.get("platform", None)
+    platform_type = submission_json.get("platform", None)
     platform_element = ET.SubElement(platform, platform_type)
     
     # Add instrument model
     instrument_model = ET.SubElement(platform_element, "INSTRUMENT_MODEL")
-    instrument_model.text = submitted_json.get("instrument_model", None)
+    instrument_model.text = submission_json.get("instrument_model", None)
     
     # Add experiment attributes if present
-    if "attributes" in submitted_json and submitted_json["attributes"]:
+    if "attributes" in submission_json and submission_json["attributes"]:
         experiment_attributes = ET.SubElement(experiment, "EXPERIMENT_ATTRIBUTES")
-        for key, value in submitted_json["attributes"].items():
+        for key, value in submission_json["attributes"].items():
             if value is None:
                 continue
                 
@@ -362,7 +362,7 @@ def generate_experiments_xml(experiments_data: List[Dict[str, Any]]) -> str:
     
     Args:
         experiments_data: List of dictionaries, each containing:
-            - submitted_json: Dictionary with experiment data
+            - submission_json: Dictionary with experiment data
             - alias: Experiment alias
             - center_name: (Optional) Center name
             - broker_name: (Optional) Broker name
@@ -376,7 +376,7 @@ def generate_experiments_xml(experiments_data: List[Dict[str, Any]]) -> str:
     
     # Add each experiment to the set
     for experiment_data in experiments_data:
-        submitted_json = experiment_data["submitted_json"]
+        submission_json = experiment_data["submission_json"]
         alias = experiment_data["alias"]
         center_name = experiment_data.get("center_name", "AToL")
         broker_name = experiment_data.get("broker_name", "AToL")
@@ -402,80 +402,80 @@ def generate_experiments_xml(experiments_data: List[Dict[str, Any]]) -> str:
         
         # Add title
         title = ET.SubElement(experiment, "TITLE")
-        title.text = submitted_json.get("title", f"{alias} experiment")
+        title.text = submission_json.get("title", f"{alias} experiment")
         
         # Add study reference
         study_ref = ET.SubElement(experiment, "STUDY_REF")
-        if "study_accession" in submitted_json:
-            study_ref.set("accession", submitted_json["study_accession"])
+        if "study_accession" in submission_json:
+            study_ref.set("accession", submission_json["study_accession"])
         else:
-            study_ref.set("refname", submitted_json.get("study_refname", "AToL_study"))
+            study_ref.set("refname", submission_json.get("study_refname", "AToL_study"))
         
         # Add design section
         design = ET.SubElement(experiment, "DESIGN")
         
         # Add design description
         design_description = ET.SubElement(design, "DESIGN_DESCRIPTION")
-        design_description.text = submitted_json.get("design_description", None)
+        design_description.text = submission_json.get("design_description", None)
         
         # Add sample descriptor
         sample_descriptor = ET.SubElement(design, "SAMPLE_DESCRIPTOR")
-        if "sample_accession" in submitted_json:
-            sample_descriptor.set("accession", submitted_json["sample_accession"])
-        elif "sample_refname" in submitted_json:
-            sample_descriptor.set("refname", submitted_json["sample_refname"])
+        if "sample_accession" in submission_json:
+            sample_descriptor.set("accession", submission_json["sample_accession"])
+        elif "sample_refname" in submission_json:
+            sample_descriptor.set("refname", submission_json["sample_refname"])
         
         # Add library descriptor
         library_descriptor = ET.SubElement(design, "LIBRARY_DESCRIPTOR")
         
         # Add library name
         library_name = ET.SubElement(library_descriptor, "LIBRARY_NAME")
-        library_name.text = submitted_json.get("library_name", None)
+        library_name.text = submission_json.get("library_name", None)
         
         # Add library strategy
         library_strategy = ET.SubElement(library_descriptor, "LIBRARY_STRATEGY")
-        library_strategy.text = submitted_json.get("library_strategy", None)
+        library_strategy.text = submission_json.get("library_strategy", None)
         
         # Add library source
         library_source = ET.SubElement(library_descriptor, "LIBRARY_SOURCE")
-        library_source.text = submitted_json.get("library_source", None)
+        library_source.text = submission_json.get("library_source", None)
         
         # Add library selection
         library_selection = ET.SubElement(library_descriptor, "LIBRARY_SELECTION")
-        library_selection.text = submitted_json.get("library_selection", None)
+        library_selection.text = submission_json.get("library_selection", None)
         
         # Add library construction protocol
         library_construction_protocol = ET.SubElement(library_descriptor, "LIBRARY_CONSTRUCTION_PROTOCOL")
-        library_construction_protocol.text = submitted_json.get("library_construction_protocol", "unspecified")
+        library_construction_protocol.text = submission_json.get("library_construction_protocol", "unspecified")
 
         # Add insert size
         insert_size = ET.SubElement(library_descriptor, "INSERT_SIZE")
-        insert_size.text = submitted_json.get("insert_size", None)
+        insert_size.text = submission_json.get("insert_size", None)
         
         # Add library layout
         library_layout = ET.SubElement(library_descriptor, "LIBRARY_LAYOUT")
-        layout_type = submitted_json.get("library_layout", None)
+        layout_type = submission_json.get("library_layout", None)
         if layout_type == "PAIRED":
             ET.SubElement(library_layout, "PAIRED")
-            if "nominal_length" in submitted_json:
+            if "nominal_length" in submission_json:
                 paired = library_layout.find("PAIRED")
-                paired.set("NOMINAL_LENGTH", str(submitted_json["nominal_length"]))
+                paired.set("NOMINAL_LENGTH", str(submission_json["nominal_length"]))
         else:
             ET.SubElement(library_layout, "SINGLE")
         
         # Add platform section
         platform = ET.SubElement(experiment, "PLATFORM")
-        platform_type = submitted_json.get("platform", None)
+        platform_type = submission_json.get("platform", None)
         platform_element = ET.SubElement(platform, platform_type)
         
         # Add instrument model
         instrument_model = ET.SubElement(platform_element, "INSTRUMENT_MODEL")
-        instrument_model.text = submitted_json.get("instrument_model", None)
+        instrument_model.text = submission_json.get("instrument_model", None)
         
         # Add experiment attributes if present
-        if "attributes" in submitted_json and submitted_json["attributes"]:
+        if "attributes" in submission_json and submission_json["attributes"]:
             experiment_attributes = ET.SubElement(experiment, "EXPERIMENT_ATTRIBUTES")
-            for key, value in submitted_json["attributes"].items():
+            for key, value in submission_json["attributes"].items():
                 if value is None:
                     continue
                     
@@ -501,13 +501,13 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 
-def generate_run_xml(submitted_json: Dict[str, Any], alias: str, center_name: str = "AToL",
+def generate_run_xml(submission_json: Dict[str, Any], alias: str, center_name: str = "AToL",
                     broker_name: str = "AToL", accession: Optional[str] = None) -> str:
     """
-    Generate ENA run XML from submitted JSON data.
+    Generate ENA run XML from submission JSON data.
     
     Args:
-        submitted_json: Dictionary containing the run data in the internal format
+        submission_json: Dictionary containing the run data in the internal format
         alias: Run alias (typically the run ID or BPA dataset ID)
         center_name: Center name for the submission
         broker_name: Broker name for the submission
@@ -544,7 +544,7 @@ def generate_run_xml(submitted_json: Dict[str, Any], alias: str, center_name: st
     
     # Add EXPERIMENT_REF section
     experiment_ref = ET.SubElement(run, "EXPERIMENT_REF")
-    experiment_accession = submitted_json.get("experiment_accession")
+    experiment_accession = submission_json.get("experiment_accession")
     
     if experiment_accession:
         experiment_ref.set("accession", experiment_accession)
@@ -556,14 +556,14 @@ def generate_run_xml(submitted_json: Dict[str, Any], alias: str, center_name: st
     
     # Add PLATFORM section
     platform = ET.SubElement(run, "PLATFORM")
-    platform_type = submitted_json.get("platform")
+    platform_type = submission_json.get("platform")
     
     if platform_type:
         platform_element = ET.SubElement(platform, platform_type)
         
         # Add INSTRUMENT_MODEL
         instrument_model = ET.SubElement(platform_element, "INSTRUMENT_MODEL")
-        instrument_model.text = submitted_json.get("instrument_model")
+        instrument_model.text = submission_json.get("instrument_model")
     
     # Add DATA_BLOCK section
     data_block = ET.SubElement(run, "DATA_BLOCK")
@@ -572,8 +572,8 @@ def generate_run_xml(submitted_json: Dict[str, Any], alias: str, center_name: st
     files = ET.SubElement(data_block, "FILES")
     
     # Add FILE element(s)
-    if "files" in submitted_json and submitted_json["files"]:
-        for file_data in submitted_json["files"]:
+    if "files" in submission_json and submission_json["files"]:
+        for file_data in submission_json["files"]:
             file_element = ET.SubElement(files, "FILE")
             
             # Add file attributes
@@ -602,7 +602,7 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
     
     Args:
         runs_data: List of dictionaries, each containing:
-            - submitted_json: Dictionary with the run data
+            - submission_json: Dictionary with the run data
             - alias: Run alias
             - accession: Optional accession number
             
@@ -614,7 +614,7 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
     
     # Process each run
     for run_data in runs_data:
-        submitted_json = run_data["submitted_json"]
+        submission_json = run_data["submission_json"]
         alias = run_data["alias"]
         accession = run_data.get("accession")
         center_name = run_data.get("center_name", "AToL")
@@ -645,7 +645,7 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
         
         # Add EXPERIMENT_REF section
         experiment_ref = ET.SubElement(run, "EXPERIMENT_REF")
-        experiment_accession = submitted_json.get("experiment_accession")
+        experiment_accession = submission_json.get("experiment_accession")
         
         if experiment_accession:
             experiment_ref.set("accession", experiment_accession)
@@ -657,14 +657,14 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
         
         # Add PLATFORM section
         platform = ET.SubElement(run, "PLATFORM")
-        platform_type = submitted_json.get("platform")
+        platform_type = submission_json.get("platform")
         
         if platform_type:
             platform_element = ET.SubElement(platform, platform_type)
             
             # Add INSTRUMENT_MODEL
             instrument_model = ET.SubElement(platform_element, "INSTRUMENT_MODEL")
-            instrument_model.text = submitted_json.get("instrument_model")
+            instrument_model.text = submission_json.get("instrument_model")
         
         # Add DATA_BLOCK section
         data_block = ET.SubElement(run, "DATA_BLOCK")
@@ -676,16 +676,16 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
         # First check if files are in a nested 'files' array
         file_element = ET.SubElement(files, "FILE")
         
-        # Add file attributes from top-level submitted_json
-        if "file_checksum" in submitted_json:
-            file_element.set("checksum", submitted_json["file_checksum"])
+        # Add file attributes from top-level submission_json
+        if "file_checksum" in submission_json:
+            file_element.set("checksum", submission_json["file_checksum"])
             file_element.set("checksum_method", "MD5")
         
-        if "file_name" in submitted_json:
-            file_element.set("filename", submitted_json["file_name"])
+        if "file_name" in submission_json:
+            file_element.set("filename", submission_json["file_name"])
             
-        if "file_format" in submitted_json:
-            file_element.set("filetype", submitted_json["file_format"])
+        if "file_format" in submission_json:
+            file_element.set("filetype", submission_json["file_format"])
     
     # Pretty-print the XML
     rough_string = ET.tostring(run_set, 'utf-8')

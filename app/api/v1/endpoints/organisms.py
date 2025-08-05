@@ -12,8 +12,8 @@ from app.core.dependencies import (
     require_role,
 )
 from app.models.organism import Organism
-from app.models.sample import Sample, SampleSubmitted
-from app.models.experiment import Experiment, ExperimentSubmitted
+from app.models.sample import Sample, SampleSubmission
+from app.models.experiment import Experiment, ExperimentSubmission
 from app.models.read import Read
 from app.models.user import User
 from app.schemas.organism import (
@@ -22,7 +22,7 @@ from app.schemas.organism import (
     OrganismUpdate,
 )
 from app.schemas.bulk_import import BulkOrganismImport, BulkImportResponse
-from app.schemas.aggregate import OrganismSubmittedJsonResponse, SampleSubmittedJson, ExperimentSubmittedJson, ReadSubmittedJson
+from app.schemas.aggregate import OrganismSubmissionJsonResponse, SampleSubmissionJson, ExperimentSubmissionJson, ReadSubmissionJson
 
 router = APIRouter()
 
@@ -42,15 +42,15 @@ def read_organisms(
     return organisms
 
 
-@router.get("/grouping-key/{organism_grouping_key}/submitted-json", response_model=OrganismSubmittedJsonResponse)
-def get_organism_submitted_json(
+@router.get("/grouping-key/{organism_grouping_key}/submission-json", response_model=OrganismSubmissionJsonResponse)
+def get_organism_submission_json(
     *,
     db: Session = Depends(get_db),
     organism_grouping_key: str,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
-    Get all submitted_json data for samples, experiments, and reads related to a specific organism_grouping_key.
+    Get all submission_json data for samples, experiments, and reads related to a specific organism_grouping_key.
     """
     # Find the organism by grouping key
     organism = db.query(Organism).filter(Organism.organism_grouping_key == organism_grouping_key).first()
@@ -61,7 +61,7 @@ def get_organism_submitted_json(
         )
     
     # Initialize response object
-    response = OrganismSubmittedJsonResponse(
+    response = OrganismSubmissionJsonResponse(
         organism_id=organism.id,
         organism_grouping_key=organism.organism_grouping_key,
         scientific_name=organism.scientific_name,
@@ -75,18 +75,18 @@ def get_organism_submitted_json(
     samples = db.query(Sample).filter(Sample.organism_id == organism.id).all()
     sample_ids = [sample.id for sample in samples]
     
-    # Get sample submitted data
+    # Get sample submission data
     if sample_ids:
-        sample_submitted_records = db.query(SampleSubmitted).filter(SampleSubmitted.sample_id.in_(sample_ids)).all()
-        for record in sample_submitted_records:
+        sample_submission_records = db.query(SampleSubmission).filter(SampleSubmission.sample_id.in_(sample_ids)).all()
+        for record in sample_submission_records:
             # Find the corresponding sample to get the bpa_sample_id
             sample = next((s for s in samples if s.id == record.sample_id), None)
             bpa_sample_id = sample.bpa_sample_id if sample else None
             
-            response.samples.append(SampleSubmittedJson(
+            response.samples.append(SampleSubmissionJson(
                 sample_id=record.sample_id,
                 bpa_sample_id=bpa_sample_id,
-                submitted_json=record.submitted_json,
+                submission_json=record.submission_json,
                 status=record.status
             ))
     
@@ -95,30 +95,30 @@ def get_organism_submitted_json(
         experiments = db.query(Experiment).filter(Experiment.sample_id.in_(sample_ids)).all()
         experiment_ids = [experiment.id for experiment in experiments]
         
-        # Get experiment submitted data
+        # Get experiment submission data
         if experiment_ids:
-            experiment_submitted_records = db.query(ExperimentSubmitted).filter(ExperimentSubmitted.experiment_id.in_(experiment_ids)).all()
-            for record in experiment_submitted_records:
+            experiment_submission_records = db.query(ExperimentSubmission).filter(ExperimentSubmission.experiment_id.in_(experiment_ids)).all()
+            for record in experiment_submission_records:
                 # Find the corresponding experiment to get the bpa_package_id
                 experiment = next((e for e in experiments if e.id == record.experiment_id), None)
                 bpa_package_id = experiment.bpa_package_id if experiment else None
                 
-                response.experiments.append(ExperimentSubmittedJson(
+                response.experiments.append(ExperimentSubmissionJson(
                     experiment_id=record.experiment_id,
                     bpa_package_id=bpa_package_id,
-                    submitted_json=record.submitted_json,
+                    submission_json=record.submission_json,
                     status=record.status
                 ))
             
             # Get reads for these experiments
             reads = db.query(Read).filter(Read.experiment_id.in_(experiment_ids)).all()
             for read in reads:
-                if read.submitted_json:  # Only include reads that have submitted_json
-                    response.reads.append(ReadSubmittedJson(
+                if read.submission_json:  # Only include reads that have submission_json
+                    response.reads.append(ReadSubmissionJson(
                         read_id=read.id,
                         experiment_id=read.experiment_id,
                         file_name=read.file_name,
-                        submitted_json=read.submitted_json,
+                        submission_json=read.submission_json,
                         status=read.status
                     ))
     

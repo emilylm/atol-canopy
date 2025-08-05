@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.models.assembly import Assembly, AssemblyFetched, AssemblySubmitted
+from app.models.assembly import Assembly, AssemblyFetched, AssemblySubmission
 from app.schemas.assembly import AssemblyCreate, AssemblyUpdate
 from app.services.base_service import BaseService
 
@@ -40,12 +40,12 @@ class AssemblyService(BaseService[Assembly, AssemblyCreate, AssemblyUpdate]):
         return query.offset(skip).limit(limit).all()
 
 
-class AssemblySubmittedService(BaseService[AssemblySubmitted, AssemblyCreate, AssemblyUpdate]):
-    """Service for AssemblySubmitted operations."""
+class AssemblySubmissionService(BaseService[AssemblySubmission, AssemblyCreate, AssemblyUpdate]):
+    """Service for AssemblySubmission operations."""
     
-    def get_by_assembly_id(self, db: Session, assembly_id: UUID) -> List[AssemblySubmitted]:
-        """Get submitted assemblies by assembly ID."""
-        return db.query(AssemblySubmitted).filter(AssemblySubmitted.assembly_id == assembly_id).all()
+    def get_by_assembly_id(self, db: Session, assembly_id: UUID) -> List[AssemblySubmission]:
+        """Get submission assemblies by assembly ID."""
+        return db.query(AssemblySubmission).filter(AssemblySubmission.assembly_id == assembly_id).all()
 
 
 class AssemblyFetchedService(BaseService[AssemblyFetched, AssemblyCreate, AssemblyUpdate]):
@@ -57,5 +57,5 @@ class AssemblyFetchedService(BaseService[AssemblyFetched, AssemblyCreate, Assemb
 
 
 assembly_service = AssemblyService(Assembly)
-assembly_submitted_service = AssemblySubmittedService(AssemblySubmitted)
+assembly_submission_service = AssemblySubmissionService(AssemblySubmission)
 assembly_fetched_service = AssemblyFetchedService(AssemblyFetched)

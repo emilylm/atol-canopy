@@ -5,7 +5,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create ENUM types
-CREATE TYPE submission_status AS ENUM ('draft', 'ready', 'submitted', 'rejected');
+CREATE TYPE submission_status AS ENUM ('draft', 'ready', 'submission', 'rejected');
 
 -- ==========================================
 -- Users and Authentication
@@ -74,14 +74,14 @@ CREATE TABLE sample (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Sample submitted table
-CREATE TABLE sample_submitted (
+-- Sample submission table
+CREATE TABLE sample_submission (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sample_id UUID REFERENCES sample(id),
     organism_id UUID REFERENCES organism(id),
     internal_json JSONB,
-    submitted_json JSONB,
-    submitted_at TIMESTAMP,
+    submission_json JSONB,
+    submission_at TIMESTAMP,
     status submission_status NOT NULL DEFAULT 'draft',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -124,16 +124,16 @@ CREATE TABLE experiment (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Experiment submitted table
-CREATE TABLE experiment_submitted (
+-- Experiment submission table
+CREATE TABLE experiment_submission (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     experiment_id UUID REFERENCES experiment(id),
     experiment_accession TEXT,
     run_accession TEXT,
     sample_id UUID REFERENCES sample(id) NOT NULL,
     internal_json JSONB,
-    submitted_json JSONB,
-    submitted_at TIMESTAMP,
+    submission_json JSONB,
+    submission_at TIMESTAMP,
     status submission_status NOT NULL DEFAULT 'draft',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -177,7 +177,7 @@ CREATE TABLE assembly (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Assembly submitted table
+-- Assembly submission table
 /*
 CREATE TABLE assembly_outputs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -188,16 +188,16 @@ CREATE TABLE assembly_outputs (
 );
 */
 
--- Assembly submitted table
-CREATE TABLE assembly_submitted (
+-- Assembly submission table
+CREATE TABLE assembly_submission (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     assembly_id UUID REFERENCES assembly(id),
     organism_id UUID REFERENCES organism(id) NOT NULL,
     sample_id UUID REFERENCES sample(id) NOT NULL,
     experiment_id UUID REFERENCES experiment(id),
     internal_json JSONB,
-    submitted_json JSONB,
-    submitted_at TIMESTAMP,
+    submission_json JSONB,
+    submission_at TIMESTAMP,
     status submission_status NOT NULL DEFAULT 'draft',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -249,7 +249,7 @@ CREATE TABLE read (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     experiment_id UUID REFERENCES experiment(id) NOT NULL,
     internal_json JSONB,
-    submitted_json JSONB,
+    submission_json JSONB,
     bpa_dataset_id TEXT,
     bpa_resource_id TEXT,
     file_name TEXT,

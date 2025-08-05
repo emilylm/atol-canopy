@@ -16,7 +16,7 @@ This system manages metadata for core biological entities:
 
 The system follows a design pattern with three tables per core entity:
 - Main table (current state)
-- Submitted table (staged for submission)
+- Submission table (staged for submission)
 - Fetched table (immutable history)
 
 ## Features

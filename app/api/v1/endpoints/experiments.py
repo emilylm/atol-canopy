@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_active_user, get_current_superuser, get_db, require_role
-from app.models.experiment import Experiment, ExperimentSubmitted
+from app.models.experiment import Experiment, ExperimentSubmission
 from app.models.read import Read
 from app.models.sample import Sample
 from app.models.user import User
@@ -18,11 +18,11 @@ from app.schemas.experiment import (
     ExperimentCreate,
     Experiment as ExperimentSchema,
     ExperimentUpdate,
-    ExperimentSubmitted as ExperimentSubmittedSchema,
+    ExperimentSubmission as ExperimentSubmissionSchema,
     ExperimentFetched as ExperimentFetchedSchema,
     ExperimentFetchedCreate,
-    ExperimentSubmittedCreate,
-    ExperimentSubmittedUpdate,
+    ExperimentSubmissionCreate,
+    ExperimentSubmissionUpdate,
     SubmissionStatus as SchemaSubmissionStatus,
 )
 from app.schemas.bulk_import import BulkExperimentImport, BulkImportResponse
@@ -75,23 +75,23 @@ def create_experiment(
     return experiment
 
 
-@router.get("/{experiment_id}/submitted-json", response_model=ExperimentSubmittedSchema)
-def get_experiment_submitted_json(
+@router.get("/{experiment_id}/submission-json", response_model=ExperimentSubmissionSchema)
+def get_experiment_submission_json(
     *,
     db: Session = Depends(get_db),
     experiment_id: UUID,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
-    Get submitted_json for a specific experiment.
+    Get submission_json for a specific experiment.
     """
-    experiment_submitted = db.query(ExperimentSubmitted).filter(ExperimentSubmitted.experiment_id == experiment_id).first()
-    if not experiment_submitted:
+    experiment_submission = db.query(ExperimentSubmission).filter(ExperimentSubmission.experiment_id == experiment_id).first()
+    if not experiment_submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Experiment submitted data not found",
+            detail="Experiment submission data not found",
         )
-    return experiment_submitted
+    return experiment_submission
 
 
 @router.get("/{experiment_id}", response_model=ExperimentSchema)
@@ -159,8 +159,8 @@ def delete_experiment(
     return experiment
 
 
-# Experiment Submitted endpoints
-@router.get("/submitted/", response_model=List[ExperimentSubmittedSchema])
+# Experiment Submission endpoints
+@router.get("/submission/", response_model=List[ExperimentSubmissionSchema])
 def read_experiment_submissions(
     db: Session = Depends(get_db),
     skip: int = 0,
@@ -172,19 +172,19 @@ def read_experiment_submissions(
     Retrieve experiment submissions.
     """
     # All users can read experiment submissions
-    query = db.query(ExperimentSubmitted)
+    query = db.query(ExperimentSubmission)
     if status:
-        query = query.filter(ExperimentSubmitted.status == status)
+        query = query.filter(ExperimentSubmission.status == status)
     
     submissions = query.offset(skip).limit(limit).all()
     return submissions
 
 
-@router.post("/submitted/", response_model=ExperimentSubmittedSchema)
+@router.post("/submission/", response_model=ExperimentSubmissionSchema)
 def create_experiment_submission(
     *,
     db: Session = Depends(get_db),
-    submission_in: ExperimentSubmittedCreate,
+    submission_in: ExperimentSubmissionCreate,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -193,15 +193,15 @@ def create_experiment_submission(
     # Only users with 'curator' or 'admin' role can create experiment submissions
     require_role(current_user, ["curator", "admin"])
     
-    submission = ExperimentSubmitted(
+    submission = ExperimentSubmission(
         experiment_id=submission_in.experiment_id,
         sample_id=submission_in.sample_id,
         experiment_accession=submission_in.experiment_accession,
         run_accession=submission_in.run_accession,
-        submitted_json=submission_in.submitted_json,
+        submission_json=submission_in.submission_json,
         internal_json=submission_in.internal_json,
         status=submission_in.status,
-        submitted_at=submission_in.submitted_at,
+        submission_at=submission_in.submission_at,
     )
     db.add(submission)
     db.commit()
@@ -209,12 +209,12 @@ def create_experiment_submission(
     return submission
 
 
-@router.put("/submitted/{submission_id}", response_model=ExperimentSubmittedSchema)
+@router.put("/submission/{submission_id}", response_model=ExperimentSubmissionSchema)
 def update_experiment_submission(
     *,
     db: Session = Depends(get_db),
     submission_id: UUID,
-    submission_in: ExperimentSubmittedUpdate,
+    submission_in: ExperimentSubmissionUpdate,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -223,7 +223,7 @@ def update_experiment_submission(
     # Only users with 'curator' or 'admin' role can update experiment submissions
     require_role(current_user, ["curator", "admin"])
     
-    submission = db.query(ExperimentSubmitted).filter(ExperimentSubmitted.id == submission_id).first()
+    submission = db.query(ExperimentSubmission).filter(ExperimentSubmission.id == submission_id).first()
     if not submission:
         raise HTTPException(status_code=404, detail="Experiment submission not found")
     
@@ -306,7 +306,7 @@ def bulk_import_experiments(
     run_mapping = ena_atol_map.get("run", {})
     
     created_experiments_count = 0
-    created_submitted_count = 0
+    created_submission_count = 0
     created_reads_count = 0
     skipped_experiments_count = 0
     skipped_runs_count = 0
@@ -358,31 +358,31 @@ def bulk_import_experiments(
             )
             db.add(experiment)
             
-            # Create submitted_json based on the mapping
-            submitted_json = {}
+            # Create submission_json based on the mapping
+            submission_json = {}
             for ena_key, atol_key in experiment_mapping.items():
                 if atol_key in experiment_data:
-                    submitted_json[ena_key] = experiment_data[atol_key]
+                    submission_json[ena_key] = experiment_data[atol_key]
             
-            # Create experiment_submitted record
-            experiment_submitted = ExperimentSubmitted(
+            # Create experiment_submission record
+            experiment_submission = ExperimentSubmission(
                 id=uuid.uuid4(),
                 experiment_id=experiment_id,
                 sample_id=sample_id,
                 internal_json=experiment_data,
-                submitted_json=submitted_json
+                submission_json=submission_json
             )
-            db.add(experiment_submitted)
+            db.add(experiment_submission)
             
             # Process runs if they exist in the experiment data
             if "runs" in experiment_data and isinstance(experiment_data["runs"], list):
                 for run in experiment_data["runs"]:
                     try:
-                        # Create submitted_json for run based on the mapping
-                        run_submitted_json = {}
+                        # Create submission_json for run based on the mapping
+                        run_submission_json = {}
                         for ena_key, atol_key in run_mapping.items():
                             if atol_key in run:
-                                run_submitted_json[ena_key] = run[atol_key]
+                                run_submission_json[ena_key] = run[atol_key]
                         
                         # Create read entity for each run
                         read = Read(
@@ -397,7 +397,7 @@ def bulk_import_experiments(
                             read_access_date=run.get("read_access_date", None),
                             bioplatforms_url=run.get("bioplatforms_url", None),
                             internal_json=run,
-                            submitted_json=run_submitted_json,
+                            submission_json=run_submission_json,
                             status="draft"
                         )
                         db.add(read)
@@ -410,7 +410,7 @@ def bulk_import_experiments(
             
             db.commit()
             created_experiments_count += 1
-            created_submitted_count += 1
+            created_submission_count += 1
             
         except Exception as e:
             print(f"Error creating experiment with package_id: {package_id}, bpa_sample_id: {bpa_sample_id}")
@@ -422,7 +422,7 @@ def bulk_import_experiments(
         "created_count": created_experiments_count,
         "skipped_experiment_count": skipped_experiments_count,
         "skipped_run_count": skipped_runs_count,
-        "message": f"Experiment import complete. Created experiments: {created_experiments_count}, Created submitted records: {created_submitted_count}, Created reads: {created_reads_count}, Skipped: {skipped_runs_count}",
+        "message": f"Experiment import complete. Created experiments: {created_experiments_count}, Created submission records: {created_submission_count}, Created reads: {created_reads_count}, Skipped: {skipped_runs_count}",
         "debug": {
             "missing_bpa_sample_id": missing_bpa_sample_id_count,
             "missing_sample": missing_sample_count,
@@ -432,16 +432,16 @@ def bulk_import_experiments(
     }
 
 
-@router.get("/submitted/{bpa_package_id}", response_model=ExperimentSubmittedSchema)
-async def get_experiment_submitted_by_package_id(
+@router.get("/submission/{bpa_package_id}", response_model=ExperimentSubmissionSchema)
+async def get_experiment_submission_by_package_id(
     bpa_package_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-) -> ExperimentSubmittedSchema:
+) -> ExperimentSubmissionSchema:
     """
-    Get ExperimentSubmitted data for a specific bpa_package_id.
+    Get ExperimentSubmission data for a specific bpa_package_id.
     
-    This endpoint retrieves the submitted experiment data associated with a specific BPA package ID.
+    This endpoint retrieves the submission experiment data associated with a specific BPA package ID.
     """
     # Find the experiment with the given bpa_package_id
     experiment = db.query(Experiment).filter(Experiment.bpa_package_id == bpa_package_id).first()
@@ -451,15 +451,15 @@ async def get_experiment_submitted_by_package_id(
             detail=f"Experiment with bpa_package_id {bpa_package_id} not found"
         )
     
-    # Find the submitted record for this experiment
-    submitted_record = db.query(ExperimentSubmitted).filter(
-        ExperimentSubmitted.experiment_id == experiment.id
+    # Find the submission record for this experiment
+    submission_record = db.query(ExperimentSubmission).filter(
+        ExperimentSubmission.experiment_id == experiment.id
     ).first()
     
-    if not submitted_record:
+    if not submission_record:
         raise HTTPException(
             status_code=404,
-            detail=f"No submitted record found for experiment with bpa_package_id {bpa_package_id}"
+            detail=f"No submission record found for experiment with bpa_package_id {bpa_package_id}"
         )
     
-    return submitted_record
+    return submission_record

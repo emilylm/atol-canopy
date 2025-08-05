@@ -12,7 +12,7 @@ from app.core.dependencies import (
     get_db,
     require_role,
 )
-from app.models.sample import Sample, SampleFetched, SampleSubmitted
+from app.models.sample import Sample, SampleFetched, SampleSubmission
 from app.models.organism import Organism
 from app.models.experiment import Experiment
 from app.models.user import User
@@ -21,14 +21,14 @@ from app.schemas.sample import (
     SampleCreate,
     SampleFetched as SampleFetchedSchema,
     SampleFetchedCreate,
-    SampleSubmitted as SampleSubmittedSchema,
-    SampleSubmittedCreate,
-    SampleSubmittedUpdate,
+    SampleSubmission as SampleSubmissionSchema,
+    SampleSubmissionCreate,
+    SampleSubmissionUpdate,
     SampleUpdate,
     SubmissionStatus as SchemaSubmissionStatus,
 )
 from app.schemas.bulk_import import BulkSampleImport, BulkImportResponse
-from app.schemas.common import SubmittedJsonResponse
+from app.schemas.common import SubmissionJsonResponse
 import os
 
 router = APIRouter()
@@ -79,23 +79,23 @@ def create_sample(
     return sample
 
 
-@router.get("/{sample_id}/submitted-json", response_model=SubmittedJsonResponse)
-def get_sample_submitted_json(
+@router.get("/{sample_id}/submission-json", response_model=SubmissionJsonResponse)
+def get_sample_submission_json(
     *,
     db: Session = Depends(get_db),
     sample_id: UUID,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
-    Get submitted_json for a specific sample.
+    Get submission_json for a specific sample.
     """
-    sample_submitted = db.query(SampleSubmitted).filter(SampleSubmitted.sample_id == sample_id).first()
-    if not sample_submitted:
+    sample_submission = db.query(SampleSubmission).filter(SampleSubmission.sample_id == sample_id).first()
+    if not sample_submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sample submitted data not found",
+            detail="Sample submission data not found",
         )
-    return {"submitted_json": sample_submitted.submitted_json}
+    return {"submission_json": sample_submission.submission_json}
 
 
 @router.get("/{sample_id}", response_model=SampleSchema)
@@ -163,8 +163,8 @@ def delete_sample(
     return sample
 
 
-# Sample Submitted endpoints
-@router.get("/submitted/", response_model=List[SampleSubmittedSchema])
+# Sample Submission endpoints
+@router.get("/submission/", response_model=List[SampleSubmissionSchema])
 def read_sample_submissions(
     db: Session = Depends(get_db),
     skip: int = 0,
@@ -176,19 +176,19 @@ def read_sample_submissions(
     Retrieve sample submissions.
     """
     # All users can read sample submissions
-    query = db.query(SampleSubmitted)
+    query = db.query(SampleSubmission)
     if status:
-        query = query.filter(SampleSubmitted.status == status)
+        query = query.filter(SampleSubmission.status == status)
     
     submissions = query.offset(skip).limit(limit).all()
     return submissions
 
 
-@router.post("/submitted/", response_model=SampleSubmittedSchema)
+@router.post("/submission/", response_model=SampleSubmissionSchema)
 def create_sample_submission(
     *,
     db: Session = Depends(get_db),
-    submission_in: SampleSubmittedCreate,
+    submission_in: SampleSubmissionCreate,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -197,15 +197,15 @@ def create_sample_submission(
     # Only users with 'curator' or 'admin' role can create sample submissions
     require_role(current_user, ["curator", "admin"])
     
-    submission = SampleSubmitted(
+    submission = SampleSubmission(
         sample_id=submission_in.sample_id,
         organism_id=submission_in.organism_id,
         bpa_sample_id=submission_in.bpa_sample_id,
         sample_accession=submission_in.sample_accession,
-        submitted_json=submission_in.submitted_json,
+        submission_json=submission_in.submission_json,
         internal_json=submission_in.internal_json,
         status=submission_in.status,
-        submitted_at=submission_in.submitted_at,
+        submission_at=submission_in.submission_at,
     )
     db.add(submission)
     db.commit()
@@ -213,12 +213,12 @@ def create_sample_submission(
     return submission
 
 
-@router.put("/submitted/{submission_id}", response_model=SampleSubmittedSchema)
+@router.put("/submission/{submission_id}", response_model=SampleSubmissionSchema)
 def update_sample_submission(
     *,
     db: Session = Depends(get_db),
     submission_id: UUID,
-    submission_in: SampleSubmittedUpdate,
+    submission_in: SampleSubmissionUpdate,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -227,7 +227,7 @@ def update_sample_submission(
     # Only users with 'curator' or 'admin' role can update sample submissions
     require_role(current_user, ["curator", "admin"])
     
-    submission = db.query(SampleSubmitted).filter(SampleSubmitted.id == submission_id).first()
+    submission = db.query(SampleSubmission).filter(SampleSubmission.id == submission_id).first()
     if not submission:
         raise HTTPException(status_code=404, detail="Sample submission not found")
     
@@ -307,7 +307,7 @@ def bulk_import_samples(
     sample_mapping = ena_atol_map.get("sample", {})
     
     created_samples_count = 0
-    created_submitted_count = 0
+    created_submission_count = 0
     skipped_count = 0
     
     for bpa_sample_id, sample_data in samples_data.items():
@@ -344,25 +344,25 @@ def bulk_import_samples(
             )
             db.add(sample)
             
-            # Create submitted_json based on the mapping
-            submitted_json = {}
+            # Create submission_json based on the mapping
+            submission_json = {}
             for ena_key, atol_key in sample_mapping.items():
                 if atol_key in sample_data:
-                    submitted_json[ena_key] = sample_data[atol_key]
+                    submission_json[ena_key] = sample_data[atol_key]
             
-            # Create sample_submitted record
-            sample_submitted = SampleSubmitted(
+            # Create sample_submission record
+            sample_submission = SampleSubmission(
                 id=uuid.uuid4(),
                 sample_id=sample_id,
                 organism_id=organism_id,
                 internal_json=sample_data,
-                submitted_json=submitted_json
+                submission_json=submission_json
             )
-            db.add(sample_submitted)
+            db.add(sample_submission)
             
             db.commit()
             created_samples_count += 1
-            created_submitted_count += 1
+            created_submission_count += 1
             
         except Exception as e:
             print(f"Error creating sample with bpa_sample_id: {bpa_sample_id}")
@@ -374,20 +374,20 @@ def bulk_import_samples(
         "created_count": created_samples_count,
         "skipped_count": skipped_count,
         "message": f"Sample import complete. Created samples: {created_samples_count}, "
-                  f"Created submitted records: {created_submitted_count}, Skipped: {skipped_count}"
+                  f"Created submission records: {created_submission_count}, Skipped: {skipped_count}"
     }
 
 
-@router.get("/submitted/by-experiment/{bpa_package_id}", response_model=List[SampleSubmittedSchema])
-async def get_sample_submitted_by_experiment_package_id(
+@router.get("/submission/by-experiment/{bpa_package_id}", response_model=List[SampleSubmissionSchema])
+async def get_sample_submission_by_experiment_package_id(
     bpa_package_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-) -> List[SampleSubmittedSchema]:
+) -> List[SampleSubmissionSchema]:
     """
-    Get SampleSubmitted data for a specific experiment.bpa_package_id.
+    Get SampleSubmission data for a specific experiment.bpa_package_id.
     
-    This endpoint retrieves all submitted sample data associated with a specific experiment BPA package ID.
+    This endpoint retrieves all submission sample data associated with a specific experiment BPA package ID.
     """
     # Find the experiment with the given bpa_package_id
     experiment = db.query(Experiment).filter(Experiment.bpa_package_id == bpa_package_id).first()
@@ -404,15 +404,15 @@ async def get_sample_submitted_by_experiment_package_id(
             detail=f"Experiment with bpa_package_id {bpa_package_id} has no associated sample"
         )
     
-    # Find the submitted records for this sample
-    submitted_records = db.query(SampleSubmitted).filter(
-        SampleSubmitted.sample_id == experiment.sample_id
+    # Find the submission records for this sample
+    submission_records = db.query(SampleSubmission).filter(
+        SampleSubmission.sample_id == experiment.sample_id
     ).all()
     
-    if not submitted_records:
+    if not submission_records:
         raise HTTPException(
             status_code=404,
-            detail=f"No submitted sample records found for experiment with bpa_package_id {bpa_package_id}"
+            detail=f"No submission sample records found for experiment with bpa_package_id {bpa_package_id}"
         )
     
-    return submitted_records
+    return submission_records

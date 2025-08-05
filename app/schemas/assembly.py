@@ -54,9 +54,9 @@ class Assembly(AssemblyInDBBase):
     pass
 
 
-# Base AssemblySubmitted schema
-class AssemblySubmittedBase(BaseModel):
-    """Base AssemblySubmitted schema with common attributes."""
+# Base AssemblySubmission schema
+class AssemblySubmissionBase(BaseModel):
+    """Base AssemblySubmission schema with common attributes."""
     organism_id: UUID
     sample_id: UUID
     experiment_id: Optional[UUID] = None
@@ -64,34 +64,34 @@ class AssemblySubmittedBase(BaseModel):
 
 
 # Schema for creating a new assembly submission
-class AssemblySubmittedCreate(AssemblySubmittedBase):
+class AssemblySubmissionCreate(AssemblySubmissionBase):
     """Schema for creating a new assembly submission."""
     assembly_id: Optional[UUID] = None
     internal_json: Optional[Dict] = None
-    submitted_json: Optional[Dict] = None
-    submitted_at: Optional[datetime] = None
+    submission_json: Optional[Dict] = None
+    submission_at: Optional[datetime] = None
 
 
 # Schema for updating an existing assembly submission
-class AssemblySubmittedUpdate(BaseModel):
+class AssemblySubmissionUpdate(BaseModel):
     """Schema for updating an existing assembly submission."""
     organism_id: Optional[UUID] = None
     sample_id: Optional[UUID] = None
     experiment_id: Optional[UUID] = None
     internal_json: Optional[Dict] = None
-    submitted_json: Optional[Dict] = None
+    submission_json: Optional[Dict] = None
     status: Optional[SubmissionStatus] = None
-    submitted_at: Optional[datetime] = None
+    submission_at: Optional[datetime] = None
 
 
 # Schema for assembly submission in DB
-class AssemblySubmittedInDBBase(AssemblySubmittedBase):
-    """Base schema for AssemblySubmitted in DB, includes id and timestamps."""
+class AssemblySubmissionInDBBase(AssemblySubmissionBase):
+    """Base schema for AssemblySubmission in DB, includes id and timestamps."""
     id: UUID
     assembly_id: Optional[UUID] = None
     internal_json: Optional[Dict] = None
-    submitted_json: Optional[Dict] = None
-    submitted_at: Optional[datetime] = None
+    submission_json: Optional[Dict] = None
+    submission_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -100,7 +100,7 @@ class AssemblySubmittedInDBBase(AssemblySubmittedBase):
 
 
 # Schema for returning assembly submission information
-class AssemblySubmitted(AssemblySubmittedInDBBase):
+class AssemblySubmission(AssemblySubmissionInDBBase):
     """Schema for returning assembly submission information."""
     pass
 

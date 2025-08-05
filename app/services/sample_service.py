@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.models.sample import Sample, SampleFetched, SampleSubmitted
+from app.models.sample import Sample, SampleFetched, SampleSubmission
 from app.schemas.sample import SampleCreate, SampleUpdate
 from app.services.base_service import BaseService
 
@@ -47,12 +47,12 @@ class SampleService(BaseService[Sample, SampleCreate, SampleUpdate]):
         return query.offset(skip).limit(limit).all()
 
 
-class SampleSubmittedService(BaseService[SampleSubmitted, SampleCreate, SampleUpdate]):
-    """Service for SampleSubmitted operations."""
+class SampleSubmissionService(BaseService[SampleSubmission, SampleCreate, SampleUpdate]):
+    """Service for SampleSubmission operations."""
     
-    def get_by_sample_id(self, db: Session, sample_id: UUID) -> List[SampleSubmitted]:
-        """Get submitted samples by sample ID."""
-        return db.query(SampleSubmitted).filter(SampleSubmitted.sample_id == sample_id).all()
+    def get_by_sample_id(self, db: Session, sample_id: UUID) -> List[SampleSubmission]:
+        """Get submission samples by sample ID."""
+        return db.query(SampleSubmission).filter(SampleSubmission.sample_id == sample_id).all()
 
 
 class SampleFetchedService(BaseService[SampleFetched, SampleCreate, SampleUpdate]):
@@ -64,5 +64,5 @@ class SampleFetchedService(BaseService[SampleFetched, SampleCreate, SampleUpdate
 
 
 sample_service = SampleService(Sample)
-sample_submitted_service = SampleSubmittedService(SampleSubmitted)
+sample_submission_service = SampleSubmissionService(SampleSubmission)
 sample_fetched_service = SampleFetchedService(SampleFetched)

@@ -28,8 +28,8 @@ class Read(Base):
     read_access_date = Column(Text, nullable=True)
     bioplatforms_url = Column(Text, nullable=True)
     internal_json = Column(JSONB, nullable=True)
-    submitted_json = Column(JSONB, nullable=True)
-    status = Column(SQLAlchemyEnum("draft", "submitted", "rejected", name="read_submission_status"), nullable=False, default="draft")
+    submission_json = Column(JSONB, nullable=True)
+    status = Column(SQLAlchemyEnum("draft", "submission", "rejected", name="read_submission_status"), nullable=False, default="draft")
     created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     

@@ -10,7 +10,7 @@ from app.core.dependencies import (
     get_db,
     require_role,
 )
-from app.models.assembly import Assembly, AssemblyFetched, AssemblySubmitted
+from app.models.assembly import Assembly, AssemblyFetched, AssemblySubmission
 from app.models.organism import Organism
 from app.models.sample import Sample
 from app.models.experiment import Experiment
@@ -23,9 +23,9 @@ from app.schemas.assembly import (
     AssemblyCreate,
     AssemblyFetched as AssemblyFetchedSchema,
     AssemblyFetchedCreate,
-    AssemblySubmitted as AssemblySubmittedSchema,
-    AssemblySubmittedCreate,
-    AssemblySubmittedUpdate,
+    AssemblySubmission as AssemblySubmissionSchema,
+    AssemblySubmissionCreate,
+    AssemblySubmissionUpdate,
     AssemblyUpdate,
     SubmissionStatus as SchemaSubmissionStatus,
 )
@@ -281,8 +281,8 @@ def delete_assembly(
     return assembly
 
 
-# Assembly Submitted endpoints
-@router.get("/submitted/", response_model=List[AssemblySubmittedSchema])
+# Assembly Submission endpoints
+@router.get("/submission/", response_model=List[AssemblySubmissionSchema])
 def read_assembly_submissions(
     db: Session = Depends(get_db),
     skip: int = 0,
@@ -294,19 +294,19 @@ def read_assembly_submissions(
     Retrieve assembly submissions.
     """
     # All users can read assembly submissions
-    query = db.query(AssemblySubmitted)
+    query = db.query(AssemblySubmission)
     if status:
-        query = query.filter(AssemblySubmitted.status == status)
+        query = query.filter(AssemblySubmission.status == status)
     
     submissions = query.offset(skip).limit(limit).all()
     return submissions
 
 
-@router.post("/submitted/", response_model=AssemblySubmittedSchema)
+@router.post("/submission/", response_model=AssemblySubmissionSchema)
 def create_assembly_submission(
     *,
     db: Session = Depends(get_db),
-    submission_in: AssemblySubmittedCreate,
+    submission_in: AssemblySubmissionCreate,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -315,16 +315,16 @@ def create_assembly_submission(
     # Only users with 'curator' or 'admin' role can create assembly submissions
     require_role(current_user, ["curator", "admin"])
     
-    submission = AssemblySubmitted(
+    submission = AssemblySubmission(
         assembly_id=submission_in.assembly_id,
         organism_id=submission_in.organism_id,
         sample_id=submission_in.sample_id,
         experiment_id=submission_in.experiment_id,
         assembly_accession=submission_in.assembly_accession,
-        submitted_json=submission_in.submitted_json,
+        submission_json=submission_in.submission_json,
         internal_json=submission_in.internal_json,
         status=submission_in.status,
-        submitted_at=submission_in.submitted_at,
+        submission_at=submission_in.submission_at,
     )
     db.add(submission)
     db.commit()
@@ -332,12 +332,12 @@ def create_assembly_submission(
     return submission
 
 
-@router.put("/submitted/{submission_id}", response_model=AssemblySubmittedSchema)
+@router.put("/submission/{submission_id}", response_model=AssemblySubmissionSchema)
 def update_assembly_submission(
     *,
     db: Session = Depends(get_db),
     submission_id: UUID,
-    submission_in: AssemblySubmittedUpdate,
+    submission_in: AssemblySubmissionUpdate,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -346,7 +346,7 @@ def update_assembly_submission(
     # Only users with 'curator' or 'admin' role can update assembly submissions
     require_role(current_user, ["curator", "admin"])
     
-    submission = db.query(AssemblySubmitted).filter(AssemblySubmitted.id == submission_id).first()
+    submission = db.query(AssemblySubmission).filter(AssemblySubmission.id == submission_id).first()
     if not submission:
         raise HTTPException(status_code=404, detail="Assembly submission not found")
     

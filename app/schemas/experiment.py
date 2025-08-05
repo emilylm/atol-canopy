@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 class SubmissionStatus(str, Enum):
     DRAFT = 'draft'
     READY = 'ready'
-    SUBMITTED = 'submitted'
+    SUBMITTED = 'submission'
     REJECTED = 'rejected'
 
 
@@ -60,46 +60,46 @@ class Experiment(ExperimentInDBBase):
     pass
 
 
-# Base ExperimentSubmitted schema
-class ExperimentSubmittedBase(BaseModel):
-    """Base ExperimentSubmitted schema with common attributes."""
+# Base ExperimentSubmission schema
+class ExperimentSubmissionBase(BaseModel):
+    """Base ExperimentSubmission schema with common attributes."""
     sample_id: UUID
     status: SubmissionStatus = Field(default=SubmissionStatus.DRAFT, description="Status of the submission")
 
 
 # Schema for creating a new experiment submission
-class ExperimentSubmittedCreate(ExperimentSubmittedBase):
+class ExperimentSubmissionCreate(ExperimentSubmissionBase):
     """Schema for creating a new experiment submission."""
     experiment_id: Optional[UUID] = None
     experiment_accession: Optional[str] = None
     run_accession: Optional[str] = None
     internal_json: Optional[Dict] = None
-    submitted_json: Optional[Dict] = None
-    submitted_at: Optional[datetime] = None
+    submission_json: Optional[Dict] = None
+    submission_at: Optional[datetime] = None
 
 
 # Schema for updating an existing experiment submission
-class ExperimentSubmittedUpdate(BaseModel):
+class ExperimentSubmissionUpdate(BaseModel):
     """Schema for updating an existing experiment submission."""
     sample_id: Optional[UUID] = None
     experiment_accession: Optional[str] = None
     run_accession: Optional[str] = None
     internal_json: Optional[Dict] = None
-    submitted_json: Optional[Dict] = None
+    submission_json: Optional[Dict] = None
     status: Optional[SubmissionStatus] = None
-    submitted_at: Optional[datetime] = None
+    submission_at: Optional[datetime] = None
 
 
 # Schema for experiment submission in DB
-class ExperimentSubmittedInDBBase(ExperimentSubmittedBase):
-    """Base schema for ExperimentSubmitted in DB, includes id and timestamps."""
+class ExperimentSubmissionInDBBase(ExperimentSubmissionBase):
+    """Base schema for ExperimentSubmission in DB, includes id and timestamps."""
     id: UUID
     experiment_id: Optional[UUID] = None
     experiment_accession: Optional[str] = None
     run_accession: Optional[str] = None
     internal_json: Optional[Dict] = None
-    submitted_json: Optional[Dict] = None
-    submitted_at: Optional[datetime] = None
+    submission_json: Optional[Dict] = None
+    submission_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -108,7 +108,7 @@ class ExperimentSubmittedInDBBase(ExperimentSubmittedBase):
 
 
 # Schema for returning experiment submission information
-class ExperimentSubmitted(ExperimentSubmittedInDBBase):
+class ExperimentSubmission(ExperimentSubmissionInDBBase):
     """Schema for returning experiment submission information."""
     pass
 

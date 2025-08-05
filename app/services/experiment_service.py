@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.models.experiment import Experiment, ExperimentFetched, ExperimentSubmitted
+from app.models.experiment import Experiment, ExperimentFetched, ExperimentSubmission
 from app.schemas.experiment import ExperimentCreate, ExperimentUpdate
 from app.services.base_service import BaseService
 
@@ -47,12 +47,12 @@ class ExperimentService(BaseService[Experiment, ExperimentCreate, ExperimentUpda
         return query.offset(skip).limit(limit).all()
 
 
-class ExperimentSubmittedService(BaseService[ExperimentSubmitted, ExperimentCreate, ExperimentUpdate]):
-    """Service for ExperimentSubmitted operations."""
+class ExperimentSubmissionService(BaseService[ExperimentSubmission, ExperimentCreate, ExperimentUpdate]):
+    """Service for ExperimentSubmission operations."""
     
-    def get_by_experiment_id(self, db: Session, experiment_id: UUID) -> List[ExperimentSubmitted]:
-        """Get submitted experiments by experiment ID."""
-        return db.query(ExperimentSubmitted).filter(ExperimentSubmitted.experiment_id == experiment_id).all()
+    def get_by_experiment_id(self, db: Session, experiment_id: UUID) -> List[ExperimentSubmission]:
+        """Get submission experiments by experiment ID."""
+        return db.query(ExperimentSubmission).filter(ExperimentSubmission.experiment_id == experiment_id).all()
 
 
 class ExperimentFetchedService(BaseService[ExperimentFetched, ExperimentCreate, ExperimentUpdate]):
@@ -64,5 +64,5 @@ class ExperimentFetchedService(BaseService[ExperimentFetched, ExperimentCreate, 
 
 
 experiment_service = ExperimentService(Experiment)
-experiment_submitted_service = ExperimentSubmittedService(ExperimentSubmitted)
+experiment_submission_service = ExperimentSubmissionService(ExperimentSubmission)
 experiment_fetched_service = ExperimentFetchedService(ExperimentFetched)

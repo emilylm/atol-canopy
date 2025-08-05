@@ -12,7 +12,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_active_user, get_db
-from app.models.experiment import Experiment, ExperimentSubmitted
+from app.models.experiment import Experiment, ExperimentSubmission
 from app.models.read import Read
 from app.models.user import User
 from app.utils.xml_generator import generate_experiment_xml, generate_experiments_xml, generate_runs_xml
@@ -32,28 +32,28 @@ def get_experiment_xml(
     
     Returns the XML representation of the experiment submission data.
     """
-    # Find the submitted record for this experiment
-    experiment_submitted = db.query(ExperimentSubmitted).filter(
-        ExperimentSubmitted.experiment_id == experiment_id
+    # Find the submission record for this experiment
+    experiment_submission = db.query(ExperimentSubmission).filter(
+        ExperimentSubmission.experiment_id == experiment_id
     ).first()
     
-    if not experiment_submitted:
+    if not experiment_submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Experiment submitted data not found",
+            detail="Experiment submission data not found",
         )
     
-    if not experiment_submitted.submitted_json:
+    if not experiment_submission.submission_json:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Experiment has no submitted_json data",
+            detail="Experiment has no submission_json data",
         )
     
     # Generate XML using the utility function
     xml_content = generate_experiment_xml(
-        submitted_json=experiment_submitted.submitted_json,
+        submission_json=experiment_submission.submission_json,
         alias=f"experiment_{experiment_id}",  # You might want to use a more meaningful alias
-        accession=experiment_submitted.experiment_accession if experiment_submitted.experiment_accession else None
+        accession=experiment_submission.experiment_accession if experiment_submission.experiment_accession else None
     )
     
     return xml_content
@@ -74,14 +74,14 @@ def get_experiments_xml(
     If no experiment_ids are provided, all experiments with the specified status are included.
     """
     # Build the query
-    query = db.query(ExperimentSubmitted)
+    query = db.query(ExperimentSubmission)
     
     # Apply filters if provided
     if experiment_ids:
-        query = query.filter(ExperimentSubmitted.experiment_id.in_(experiment_ids))
+        query = query.filter(ExperimentSubmission.experiment_id.in_(experiment_ids))
     
     if status:
-        query = query.filter(ExperimentSubmitted.status == status)
+        query = query.filter(ExperimentSubmission.status == status)
     
     # Get the experiments
     experiments = query.all()
@@ -89,13 +89,13 @@ def get_experiments_xml(
     if not experiments:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No experiment submitted data found matching the criteria",
+            detail="No experiment submission data found matching the criteria",
         )
     
     # Prepare the data for XML generation
     experiments_data = []
     for experiment in experiments:
-        if not experiment.submitted_json:
+        if not experiment.submission_json:
             continue
             
         # Get the experiment accession if available
@@ -107,7 +107,7 @@ def get_experiments_xml(
             alias = experiment.experiment.bpa_package_id
             
         experiments_data.append({
-            "submitted_json": experiment.submitted_json,
+            "submission_json": experiment.submission_json,
             "alias": alias,
             "accession": accession
         })
@@ -115,7 +115,7 @@ def get_experiments_xml(
     if not experiments_data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="None of the selected experiments have submitted_json data",
+            detail="None of the selected experiments have submission_json data",
         )
     
     # Generate XML using the utility function
@@ -144,28 +144,28 @@ def get_experiment_by_package_id_xml(
             detail=f"Experiment with bpa_package_id {bpa_package_id} not found"
         )
     
-    # Find the submitted records for this experiment
-    experiment_submitted = db.query(ExperimentSubmitted).filter(
-        ExperimentSubmitted.experiment_id == experiment.id
+    # Find the submission records for this experiment
+    experiment_submission = db.query(ExperimentSubmission).filter(
+        ExperimentSubmission.experiment_id == experiment.id
     ).first()
     
-    if not experiment_submitted:
+    if not experiment_submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No submitted experiment records found for experiment with bpa_package_id {bpa_package_id}"
+            detail=f"No submission experiment records found for experiment with bpa_package_id {bpa_package_id}"
         )
     
-    if not experiment_submitted.submitted_json:
+    if not experiment_submission.submission_json:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Experiment has no submitted_json data",
+            detail="Experiment has no submission_json data",
         )
     
     # Generate XML using the utility function
     xml_content = generate_experiment_xml(
-        submitted_json=experiment_submitted.submitted_json,
+        submission_json=experiment_submission.submission_json,
         alias=bpa_package_id,
-        accession=experiment_submitted.experiment_accession
+        accession=experiment_submission.experiment_accession
     )
     
     return xml_content

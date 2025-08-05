@@ -75,7 +75,7 @@ The request body should match the format of the JSON file in `data/unique_sample
 {
   "created_count": 15,
   "skipped_count": 3,
-  "message": "Sample import complete. Created samples: 15, Created submitted records: 15, Skipped: 3"
+  "message": "Sample import complete. Created samples: 15, Created submission records: 15, Skipped: 3"
 }
 ```
 
@@ -106,7 +106,7 @@ The request body should match the format of the JSON file in `data/experiments.j
 {
   "created_count": 20,
   "skipped_count": 5,
-  "message": "Experiment import complete. Created experiments: 20, Created submitted records: 20, Skipped: 5"
+  "message": "Experiment import complete. Created experiments: 20, Created submission records: 20, Skipped: 5"
 }
 ```
 

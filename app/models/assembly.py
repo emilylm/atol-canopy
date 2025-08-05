@@ -34,13 +34,13 @@ class Assembly(Base):
     experiment = relationship("Experiment", backref="assemblies")
 
 
-class AssemblySubmitted(Base):
+class AssemblySubmission(Base):
     """
-    AssemblySubmitted model for storing assembly data staged for submission to ENA.
+    AssemblySubmission model for storing assembly data staged for submission to ENA.
     
-    This model corresponds to the 'assembly_submitted' table in the database.
+    This model corresponds to the 'assembly_submission' table in the database.
     """
-    __tablename__ = "assembly_submitted"
+    __tablename__ = "assembly_submission"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     assembly_id = Column(UUID(as_uuid=True), ForeignKey("assembly.id"), nullable=True)
@@ -48,14 +48,14 @@ class AssemblySubmitted(Base):
     sample_id = Column(UUID(as_uuid=True), ForeignKey("sample.id"), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiment.id"), nullable=True)
     internal_json = Column(JSONB, nullable=True)
-    submitted_json = Column(JSONB, nullable=True)
-    submitted_at = Column(DateTime, nullable=True)
-    status = Column(SQLAlchemyEnum("draft", "ready", "submitted", "rejected", name="submission_status"), nullable=False, default="draft")
+    submission_json = Column(JSONB, nullable=True)
+    submission_at = Column(DateTime, nullable=True)
+    status = Column(SQLAlchemyEnum("draft", "ready", "submission", "rejected", name="submission_status"), nullable=False, default="draft")
     created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
-    assembly = relationship("Assembly", backref="submitted_records")
+    assembly = relationship("Assembly", backref="submission_records")
     organism = relationship("Organism")
     sample = relationship("Sample")
     experiment = relationship("Experiment")
