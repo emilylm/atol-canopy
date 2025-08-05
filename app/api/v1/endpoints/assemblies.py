@@ -92,6 +92,7 @@ def get_pipeline_inputs(
         print(f"No samples found for organism with grouping key '{organism_grouping_key}'")
         return [{
             "scientific_name": organism.scientific_name,
+            "tax_id": organism.tax_id,
             "files": {}
         }]
     
@@ -118,6 +119,7 @@ def get_pipeline_inputs(
     # Create the result object
     result.append({
         "scientific_name": organism.scientific_name,
+        "tax_id": organism.tax_id,       
         "files": files_dict
     })
     
