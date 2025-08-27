@@ -7,9 +7,10 @@ This module provides functions to generate XML files for various ENA submission 
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from typing import Dict, Any, List, Optional
+from app.models.organism import Organism
 
 
-def generate_sample_xml(submission_json: Dict[str, Any], alias: str, center_name: str = "AToL", 
+def generate_sample_xml(organism: Organism, submission_json: Dict[str, Any], alias: str, center_name: str = "AToL", 
                        broker_name: str = "AToL", accession: Optional[str] = None) -> str:
     """
     Generate ENA sample XML from submission JSON data.
@@ -54,15 +55,15 @@ def generate_sample_xml(submission_json: Dict[str, Any], alias: str, center_name
     
     # Add TAXON_ID (required field)
     taxon_id = ET.SubElement(sample_name, "TAXON_ID")
-    taxon_id.text = str(submission_json.get("taxon_id", None))
+    taxon_id.text = str(organism.tax_id)
     
     # Add SCIENTIFIC_NAME (required field)
     scientific_name = ET.SubElement(sample_name, "SCIENTIFIC_NAME")
-    scientific_name.text = submission_json.get("scientific_name", None)
+    scientific_name.text = organism.scientific_name
     
     # Always add COMMON_NAME (can be empty)
     common_name = ET.SubElement(sample_name, "COMMON_NAME")
-    common_name.text = submission_json.get("common_name", None)
+    common_name.text = organism.common_name
     
     # Add description if available
     if "description" in submission_json:

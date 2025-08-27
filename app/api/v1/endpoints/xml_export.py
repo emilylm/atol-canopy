@@ -17,6 +17,7 @@ from app.models.sample import SampleSubmission
 from app.models.experiment import ExperimentSubmission
 from app.models.user import User
 from app.utils.xml_generator import generate_sample_xml, generate_samples_xml, generate_experiment_xml, generate_experiments_xml
+from app.models.organism import Organism
 
 router = APIRouter()
 
@@ -49,9 +50,26 @@ def get_sample_xml(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Sample has no submission_json data",
         )
+        
+    # Get the organism data
+    organism_id = sample_submission.organism_id
+    if not organism_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Sample_submitted object missing organism_id",
+        )
+        
+    organism = db.query(Organism).filter(Organism.id == organism_id).first()
+    
+    if not organism:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Organism with id {organism_id} not found",
+        )
     
     # Generate XML using the utility function
     xml_content = generate_sample_xml(
+        organism=organism,
         submission_json=sample_submission.submission_json,
         alias=sample_submission.sample.bpa_sample_id if sample_submission.sample else f"sample_{sample_submission.sample_id}",
         accession=sample_submission.sample.sample_accession if sample_submission.sample and sample_submission.sample.sample_accession else None
@@ -173,8 +191,25 @@ def get_experiment_samples_xml(
             detail="Sample has no submission_json data",
         )
     
+    # Get the organism data
+    organism_id = sample_submission.organism_id
+    if not organism_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Sample_submitted object missing organism_id",
+        )
+        
+    organism = db.query(Organism).filter(Organism.id == organism_id).first()
+    
+    if not organism:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Organism with id {organism_id} not found",
+        )
+    
     # Generate XML using the utility function
     xml_content = generate_sample_xml(
+        organism=organism,
         submission_json=sample_submission.submission_json,
         alias=sample_submission.sample.bpa_sample_id if sample_submission.sample else f"sample_{sample_submission.sample_id}",
         accession=sample_submission.sample.sample_accession if sample_submission.sample and sample_submission.sample.sample_accession else None
