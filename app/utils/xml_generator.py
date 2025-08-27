@@ -54,15 +54,15 @@ def generate_sample_xml(submission_json: Dict[str, Any], alias: str, center_name
     
     # Add TAXON_ID (required field)
     taxon_id = ET.SubElement(sample_name, "TAXON_ID")
-    taxon_id.text = str(submission_json.get("taxon_id", "12908"))  # Default to 'unidentified organism' if not provided
+    taxon_id.text = str(submission_json.get("taxon_id", None))
     
     # Add SCIENTIFIC_NAME (required field)
     scientific_name = ET.SubElement(sample_name, "SCIENTIFIC_NAME")
-    scientific_name.text = submission_json.get("scientific_name", "unidentified organism")
+    scientific_name.text = submission_json.get("scientific_name", None)
     
     # Always add COMMON_NAME (can be empty)
     common_name = ET.SubElement(sample_name, "COMMON_NAME")
-    common_name.text = submission_json.get("common_name", "")
+    common_name.text = submission_json.get("common_name", None)
     
     # Add description if available
     if "description" in submission_json:
@@ -80,7 +80,7 @@ def generate_sample_xml(submission_json: Dict[str, Any], alias: str, center_name
         if key in skip_keys:
             continue
             
-        # Skip null/None values
+        # TODO: handle null/None values, should default to 'not provided' for mandatory fields?
         if value is None:
             continue
             
@@ -96,7 +96,7 @@ def generate_sample_xml(submission_json: Dict[str, Any], alias: str, center_name
         if key == "geographic location (latitude)" or key == "geographic location (longitude)":
             units = ET.SubElement(attribute, "UNITS")
             units.text = "DD"
-    
+
     # Add ENA-CHECKLIST attribute if not already present
     checklist_found = any(attr.find("TAG").text == "ENA-CHECKLIST" 
                          for attr in sample_attributes.findall("SAMPLE_ATTRIBUTE"))
@@ -106,8 +106,32 @@ def generate_sample_xml(submission_json: Dict[str, Any], alias: str, center_name
         tag = ET.SubElement(checklist_attr, "TAG")
         tag.text = "ENA-CHECKLIST"
         val = ET.SubElement(checklist_attr, "VALUE")
-        val.text = "ERC000053"  # Default checklist for environmental samples
+        val.text = "ERC000053"
     
+    # TO-DO add a section to map over mandatory ToL checklist fields and set to "not provided" if they don't yet exist
+    # For now, I'm adding in a few fields manually:
+    # 1. Add collecting institution attribute if not already present
+    collecting_institution_found = any(attr.find("TAG").text == "collecting institution" 
+                         for attr in sample_attributes.findall("SAMPLE_ATTRIBUTE"))
+    
+    if not collecting_institution_found:
+        collecting_institution_attr = ET.SubElement(sample_attributes, "SAMPLE_ATTRIBUTE")
+        tag = ET.SubElement(collecting_institution_attr, "TAG")
+        tag.text = "collecting institution"
+        val = ET.SubElement(collecting_institution_attr, "VALUE")
+        val.text = "not provided"
+
+    # 2. Add project name attribute if not already present
+    project_name_found = any(attr.find("TAG").text == "project name" 
+                         for attr in sample_attributes.findall("SAMPLE_ATTRIBUTE"))
+    
+    if not project_name_found:
+        project_name_attr = ET.SubElement(sample_attributes, "SAMPLE_ATTRIBUTE")
+        tag = ET.SubElement(project_name_attr, "TAG")
+        tag.text = "project name"
+        val = ET.SubElement(project_name_attr, "VALUE")
+        val.text = "atol-genome-engine"
+
     # Convert to string with proper formatting
     rough_string = ET.tostring(sample_set, 'utf-8')
     reparsed = minidom.parseString(rough_string)
@@ -167,7 +191,7 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
         
         # Add TAXON_ID (required field)
         taxon_id = ET.SubElement(sample_name, "TAXON_ID")
-        taxon_id.text = str(submission_json.get("taxon_id", "12908"))  # Default to 'unidentified organism' if not provided
+        taxon_id.text = str(submission_json.get("taxon_id", "12908")) 
         
         # Add SCIENTIFIC_NAME (required field)
         scientific_name = ET.SubElement(sample_name, "SCIENTIFIC_NAME")
@@ -193,7 +217,7 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
             if key in skip_keys:
                 continue
                 
-            # Skip null/None values
+            # TODO: handle null/None values, should default to 'not provided' for mandatory fields?
             if value is None:
                 continue
                 

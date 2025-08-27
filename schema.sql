@@ -170,7 +170,6 @@ CREATE TABLE assembly (
     -- Internal AToL fields (internal_* (or atol_*??))
     
     source_json JSONB,
-    internal_notes TEXT,
     synced_at TIMESTAMP,
     last_checked_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),

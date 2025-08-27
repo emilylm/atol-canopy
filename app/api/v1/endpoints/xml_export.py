@@ -53,7 +53,7 @@ def get_sample_xml(
     # Generate XML using the utility function
     xml_content = generate_sample_xml(
         submission_json=sample_submission.submission_json,
-        alias=f"sample_{sample_id}",  # You might want to use a more meaningful alias
+        alias=sample_submission.sample.bpa_sample_id if sample_submission.sample else f"sample_{sample_submission.sample_id}",
         accession=sample_submission.sample.sample_accession if sample_submission.sample and sample_submission.sample.sample_accession else None
     )
     
