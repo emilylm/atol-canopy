@@ -392,11 +392,11 @@ def bulk_import_experiments(
                             bpa_resource_id=run.get("bpa_resource_id", None),
                             file_name=run.get("file_name", None),
                             file_format=run.get("file_format", None),
+                            file_size=run.get("file_size", None),
                             file_submission_date=run.get("file_submission_date", None),
                             file_checksum=run.get("file_checksum", None),
                             read_access_date=run.get("read_access_date", None),
                             bioplatforms_url=run.get("bioplatforms_url", None),
-                            internal_json=run,
                             submission_json=run_submission_json,
                             status="draft"
                         )

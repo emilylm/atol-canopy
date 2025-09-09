@@ -183,7 +183,6 @@ def generate_experiment_xml(submission_json: Dict[str, Any], alias: str, study_a
     design_description.text = submission_json.get("design_description", "")
     
     sample_descriptor = ET.SubElement(design, "SAMPLE_DESCRIPTOR")
-    sample_descriptor = ET.SubElement(design, "SAMPLE_DESCRIPTOR")
     if sample_accession:
         sample_descriptor.set("accession", sample_accession)
     elif sample_alias:
@@ -243,25 +242,25 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 
-def generate_run_xml(submission_json: Dict[str, Any], alias: str, experiment_accession: Optional[str] = None,
-                    experiment_alias: Optional[str] = None, center_name: str = "AToL",
-                    broker_name: str = "AToL", accession: Optional[str] = None) -> str:
+def _create_run_element(submission_json: Dict[str, Any], alias: str, experiment_accession: Optional[str] = None,
+                      experiment_alias: Optional[str] = None, center_name: str = "AToL",
+                      broker_name: str = "AToL", accession: Optional[str] = None) -> ET.Element:
     """
-    Generate ENA run XML from submission JSON data.
+    Helper function to create a RUN element with all its children.
     
     Args:
-        submission_json: Dictionary containing the run data in the internal format
-        alias: Run alias (typically the run ID or BPA dataset ID)
-        center_name: Center name for the submission
-        broker_name: Broker name for the submission
-        accession: Optional accession number if the run is already registered
+        submission_json: Dictionary containing the run data
+        alias: Run alias
+        experiment_accession: Optional experiment accession
+        experiment_alias: Optional experiment alias/refname
+        center_name: Center name
+        broker_name: Broker name
+        accession: Optional run accession
         
     Returns:
-        Pretty-printed XML string in ENA run format
+        XML Element for the RUN
     """
-    run_set = ET.Element("RUN_SET")
-    
-    run = ET.SubElement(run_set, "RUN")
+    run = ET.Element("RUN")
     run.set("alias", alias)
     run.set("center_name", center_name)
     run.set("broker_name", broker_name)
@@ -293,9 +292,7 @@ def generate_run_xml(submission_json: Dict[str, Any], alias: str, experiment_acc
         raise HTTPException(status_code=400, detail="Experiment accession or alias must be provided")
     
     data_block = ET.SubElement(run, "DATA_BLOCK")
-    
     files = ET.SubElement(data_block, "FILES")
-
     file_element = ET.SubElement(files, "FILE")
     
     if "file_checksum" in submission_json:
@@ -307,6 +304,41 @@ def generate_run_xml(submission_json: Dict[str, Any], alias: str, experiment_acc
         
     if "file_format" in submission_json:
         file_element.set("filetype", submission_json["file_format"])
+    
+    return run
+
+
+def generate_run_xml(submission_json: Dict[str, Any], alias: str, experiment_accession: Optional[str] = None,
+                    experiment_alias: Optional[str] = None, center_name: str = "AToL",
+                    broker_name: str = "AToL", accession: Optional[str] = None) -> str:
+    """
+    Generate ENA run XML from submission JSON data.
+    
+    Args:
+        submission_json: Dictionary containing the run data in the internal format
+        alias: Run alias (typically the run ID or BPA dataset ID)
+        experiment_accession: Optional experiment accession
+        experiment_alias: Optional experiment alias/refname
+        center_name: Center name for the submission
+        broker_name: Broker name for the submission
+        accession: Optional accession number if the run is already registered
+        
+    Returns:
+        Pretty-printed XML string in ENA run format
+    """
+    run_set = ET.Element("RUN_SET")
+    
+    run = _create_run_element(
+        submission_json=submission_json,
+        alias=alias,
+        experiment_accession=experiment_accession,
+        experiment_alias=experiment_alias,
+        center_name=center_name,
+        broker_name=broker_name,
+        accession=accession
+    )
+    
+    run_set.append(run)
     
     rough_string = ET.tostring(run_set, 'utf-8')
     reparsed = minidom.parseString(rough_string)
@@ -323,6 +355,8 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]], experiment_accession: Opt
             - submission_json: Dictionary with the run data
             - alias: Run alias
             - accession: Optional accession number
+        experiment_accession: Optional experiment accession to override all runs
+        experiment_alias: Optional experiment alias/refname to override all runs
             
     Returns:
         Pretty-printed XML string in ENA run format
@@ -336,52 +370,17 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]], experiment_accession: Opt
         center_name = run_data.get("center_name", "AToL")
         broker_name = run_data.get("broker_name", "AToL")
         
-        run = ET.SubElement(run_set, "RUN")
-        run.set("alias", alias)
-        run.set("center_name", center_name)
-        run.set("broker_name", broker_name)
+        run = _create_run_element(
+            submission_json=submission_json,
+            alias=alias,
+            experiment_accession=experiment_accession,
+            experiment_alias=experiment_alias,
+            center_name=center_name,
+            broker_name=broker_name,
+            accession=accession
+        )
         
-        if accession:
-            run.set("accession", accession)
-        
-        identifiers = ET.SubElement(run, "IDENTIFIERS")
-        
-        if accession:
-            primary_id = ET.SubElement(identifiers, "PRIMARY_ID")
-            primary_id.text = accession
-        
-        submitter_id = ET.SubElement(identifiers, "SUBMITTER_ID")
-        submitter_id.text = alias
-        submitter_id.set("namespace", center_name)
-        
-        experiment_ref = ET.SubElement(run, "EXPERIMENT_REF")
-        
-        exp_accession = experiment_accession or submission_json.get("experiment_accession")
-        exp_alias = experiment_alias or submission_json.get("experiment_alias")
-        
-        if exp_accession:
-            experiment_ref.set("accession", exp_accession)
-        elif exp_alias:
-            experiment_ref.set("refname", exp_alias)
-        else:
-            # Raise an error if neither experiment_accession nor experiment_alias is provided
-            raise HTTPException(status_code=400, detail="Experiment accession or alias must be provided")
-        
-        data_block = ET.SubElement(run, "DATA_BLOCK")
-        
-        files = ET.SubElement(data_block, "FILES")
-        
-        file_element = ET.SubElement(files, "FILE")
-        
-        if "file_checksum" in submission_json:
-            file_element.set("checksum", submission_json["file_checksum"])
-            file_element.set("checksum_method", "MD5")
-        
-        if "file_name" in submission_json:
-            file_element.set("filename", submission_json["file_name"])
-            
-        if "file_format" in submission_json:
-            file_element.set("filetype", submission_json["file_format"])
+        run_set.append(run)
     
     rough_string = ET.tostring(run_set, 'utf-8')
     reparsed = minidom.parseString(rough_string)
