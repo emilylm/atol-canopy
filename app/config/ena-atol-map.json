@@ -2,7 +2,7 @@
   "sample": {
     "tax_id": "organism.taxon_id",
     "culture_or_strain_id": "organism.culture_or_strain_id",
-    "specimen_voucher": "specimen_voucer",
+    "specimen_voucher": "specimen_voucher",
     "identified_by": "identified_by",
     "lifestage": "lifestage",
     "sex": "sex",
@@ -18,7 +18,7 @@
     "collection date": "collection_date",
     "collected_by": "collected_by",
     "collecting institution": "collecting_institution",
-    "alias": "sample_name",
+    "alias": "bpa_sample_id",
     "specimen_id": "specimen_id",
     "title": "title",
     "sample same as": "sample_same_as",
@@ -36,6 +36,7 @@
     "library_selection": "library_selection",
     "library_layout": "library_layout",
     "instrument_model": "instrument_model",
+    "library_name": "bpa_library_id",
     "platform": "platform"
   },
   "run": {

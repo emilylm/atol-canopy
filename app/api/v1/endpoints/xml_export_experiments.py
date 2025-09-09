@@ -52,7 +52,7 @@ def get_experiment_xml(
     # Generate XML using the utility function
     xml_content = generate_experiment_xml(
         submission_json=experiment_submission.submission_json,
-        alias=f"experiment_{experiment_id}",  # You might want to use a more meaningful alias
+        alias=experiment_submission.submission_json.get("alias"),
         accession=experiment_submission.experiment_accession if experiment_submission.experiment_accession else None
     )
     
@@ -164,7 +164,7 @@ def get_experiment_by_package_id_xml(
     # Generate XML using the utility function
     xml_content = generate_experiment_xml(
         submission_json=experiment_submission.submission_json,
-        alias=bpa_package_id,
+        alias=experiment_submission.submission_json.get("alias"),
         accession=experiment_submission.experiment_accession
     )
     

@@ -28,7 +28,7 @@ def generate_sample_xml(organism: Organism, submission_json: Dict[str, Any], ali
     # Create root element
     sample_set = ET.Element("SAMPLE_SET")
     
-    # Create sample element with attributes
+    # Create sample element with core attributes
     sample = ET.SubElement(sample_set, "SAMPLE")
     sample.set("alias", alias)
     sample.set("center_name", center_name)
@@ -36,7 +36,6 @@ def generate_sample_xml(organism: Organism, submission_json: Dict[str, Any], ali
     if accession:
         sample.set("accession", accession)
     
-    # Create identifiers section
     identifiers = ET.SubElement(sample, "IDENTIFIERS")
     if accession:
         primary_id = ET.SubElement(identifiers, "PRIMARY_ID")
@@ -46,26 +45,20 @@ def generate_sample_xml(organism: Organism, submission_json: Dict[str, Any], ali
     submitter_id.set("namespace", center_name)
     submitter_id.text = alias
     
-    # Always add title (required field)
     title = ET.SubElement(sample, "TITLE")
-    title.text = submission_json.get("title", f"{alias} sample")
+    title.text = submission_json.get("title", f"{alias}")
     
-    # Always add sample name with taxonomy information (required section)
     sample_name = ET.SubElement(sample, "SAMPLE_NAME")
     
-    # Add TAXON_ID (required field)
     taxon_id = ET.SubElement(sample_name, "TAXON_ID")
     taxon_id.text = str(organism.tax_id)
     
-    # Add SCIENTIFIC_NAME (required field)
     scientific_name = ET.SubElement(sample_name, "SCIENTIFIC_NAME")
     scientific_name.text = organism.scientific_name
     
-    # Always add COMMON_NAME (can be empty)
     common_name = ET.SubElement(sample_name, "COMMON_NAME")
     common_name.text = organism.common_name
     
-    # Add description if available
     if "description" in submission_json:
         description = ET.SubElement(sample, "DESCRIPTION")
         description.text = submission_json["description"]
@@ -74,14 +67,13 @@ def generate_sample_xml(organism: Organism, submission_json: Dict[str, Any], ali
     sample_attributes = ET.SubElement(sample, "SAMPLE_ATTRIBUTES")
     
     # Skip these keys as they are handled separately
-    skip_keys = ["title", "taxon_id", "scientific_name", "common_name", "description"]
+    skip_keys = ["title", "taxon_id", "scientific_name", "common_name", "description", "alias"]
     
     # Process all other keys as sample attributes
     for key, value in submission_json.items():
         if key in skip_keys:
             continue
-            
-        # TODO: handle null/None values, should default to 'not provided' for mandatory fields?
+
         if value is None:
             continue
             
@@ -93,12 +85,11 @@ def generate_sample_xml(organism: Organism, submission_json: Dict[str, Any], ali
         val = ET.SubElement(attribute, "VALUE")
         val.text = str(value)
         
-        # Add units if applicable (for latitude/longitude)
         if key == "geographic location (latitude)" or key == "geographic location (longitude)":
             units = ET.SubElement(attribute, "UNITS")
             units.text = "DD"
 
-    # Add ENA-CHECKLIST attribute if not already present
+    # Check if ENA-CHECKLIST exists before adding it in
     checklist_found = any(attr.find("TAG").text == "ENA-CHECKLIST" 
                          for attr in sample_attributes.findall("SAMPLE_ATTRIBUTE"))
     
@@ -109,20 +100,7 @@ def generate_sample_xml(organism: Organism, submission_json: Dict[str, Any], ali
         val = ET.SubElement(checklist_attr, "VALUE")
         val.text = "ERC000053"
     
-    # TO-DO add a section to map over mandatory ToL checklist fields and set to "not provided" if they don't yet exist
-    # For now, I'm adding in a few fields manually:
-    # 1. Add collecting institution attribute if not already present
-    collecting_institution_found = any(attr.find("TAG").text == "collecting institution" 
-                         for attr in sample_attributes.findall("SAMPLE_ATTRIBUTE"))
-    
-    if not collecting_institution_found:
-        collecting_institution_attr = ET.SubElement(sample_attributes, "SAMPLE_ATTRIBUTE")
-        tag = ET.SubElement(collecting_institution_attr, "TAG")
-        tag.text = "collecting institution"
-        val = ET.SubElement(collecting_institution_attr, "VALUE")
-        val.text = "not provided"
-
-    # 2. Add project name attribute if not already present
+    # Check project name does not exist before adding it in
     project_name_found = any(attr.find("TAG").text == "project name" 
                          for attr in sample_attributes.findall("SAMPLE_ATTRIBUTE"))
     
@@ -133,10 +111,24 @@ def generate_sample_xml(organism: Organism, submission_json: Dict[str, Any], ali
         val = ET.SubElement(project_name_attr, "VALUE")
         val.text = "atol-genome-engine"
 
+    # TO-DO map over mandatory ToL checklist fields and set to "not provided" if they don't yet exist
+    # For now, I'm manually adding in a field which doesn't appear in the BPA data:
+
+    # 1. Add collecting institution attribute if not already present
+    collecting_institution_found = any(attr.find("TAG").text == "collecting institution" 
+                         for attr in sample_attributes.findall("SAMPLE_ATTRIBUTE"))
+    
+    if not collecting_institution_found:
+        collecting_institution_attr = ET.SubElement(sample_attributes, "SAMPLE_ATTRIBUTE")
+        tag = ET.SubElement(collecting_institution_attr, "TAG")
+        tag.text = "collecting institution"
+        val = ET.SubElement(collecting_institution_attr, "VALUE")
+        val.text = "not provided"
+    
     # Convert to string with proper formatting
     rough_string = ET.tostring(sample_set, 'utf-8')
     reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ")
+    return reparsed.toprettyxml(indent="  ", encoding="UTF-8").decode('UTF-8')
 
 
 def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
@@ -179,20 +171,20 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
             primary_id = ET.SubElement(identifiers, "PRIMARY_ID")
             primary_id.text = accession
         
-        submitter_id = ET.SubElement(identifiers, "SUBMITTER_ID")
-        submitter_id.set("namespace", center_name)
-        submitter_id.text = alias
+        # submitter_id = ET.SubElement(identifiers, "SUBMITTER_ID")
+        # submitter_id.set("namespace", center_name)
+        # submitter_id.text = alias
         
         # Always add title (required field)
         title = ET.SubElement(sample, "TITLE")
-        title.text = submission_json.get("title", f"{alias} sample")
+        title.text = submission_json.get("title", alias)
         
         # Always add sample name with taxonomy information (required section)
         sample_name = ET.SubElement(sample, "SAMPLE_NAME")
         
         # Add TAXON_ID (required field)
         taxon_id = ET.SubElement(sample_name, "TAXON_ID")
-        taxon_id.text = str(submission_json.get("taxon_id", "12908")) 
+        taxon_id.text = str(submission_json.get("taxon_id")) 
         
         # Add SCIENTIFIC_NAME (required field)
         scientific_name = ET.SubElement(sample_name, "SCIENTIFIC_NAME")
@@ -200,7 +192,7 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
         
         # Always add COMMON_NAME (can be empty)
         common_name = ET.SubElement(sample_name, "COMMON_NAME")
-        common_name.text = submission_json.get("common_name", "")
+        common_name.text = organism.get("common_name", "")
         
         # Add description if available
         if "description" in submission_json:
@@ -211,7 +203,7 @@ def generate_samples_xml(samples_data: List[Dict[str, Any]]) -> str:
         sample_attributes = ET.SubElement(sample, "SAMPLE_ATTRIBUTES")
         
         # Skip these keys as they are handled separately
-        skip_keys = ["title", "taxon_id", "scientific_name", "common_name", "description"]
+        skip_keys = ["title", "taxon_id", "scientific_name", "common_name", "description", "alias"]
         
         # Process all other keys as sample attributes
         for key, value in submission_json.items():
@@ -292,7 +284,7 @@ def generate_experiment_xml(submission_json: Dict[str, Any], alias: str, center_
     title = ET.SubElement(experiment, "TITLE")
     title.text = submission_json.get("title", f"{alias} experiment")
     
-    # Add study reference
+    # TODO study reference
     study_ref = ET.SubElement(experiment, "STUDY_REF")
     if "study_accession" in submission_json:
         study_ref.set("accession", submission_json["study_accession"])
