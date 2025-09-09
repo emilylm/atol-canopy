@@ -276,7 +276,8 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 
-def generate_run_xml(submission_json: Dict[str, Any], alias: str, center_name: str = "AToL",
+def generate_run_xml(submission_json: Dict[str, Any], alias: str, experiment_accession: Optional[str] = None,
+                    experiment_alias: Optional[str] = None, center_name: str = "AToL",
                     broker_name: str = "AToL", accession: Optional[str] = None) -> str:
     """
     Generate ENA run XML from submission JSON data.
@@ -319,51 +320,39 @@ def generate_run_xml(submission_json: Dict[str, Any], alias: str, center_name: s
     
     # Add EXPERIMENT_REF section
     experiment_ref = ET.SubElement(run, "EXPERIMENT_REF")
-    experiment_accession = submission_json.get("experiment_accession")
     
-    if experiment_accession:
-        experiment_ref.set("accession", experiment_accession)
-        
-        # Add IDENTIFIERS for experiment reference
-        exp_identifiers = ET.SubElement(experiment_ref, "IDENTIFIERS")
-        exp_primary_id = ET.SubElement(exp_identifiers, "PRIMARY_ID")
-        exp_primary_id.text = experiment_accession
+    # Use provided experiment_accession or experiment_alias if available, otherwise fall back to submission_json
+    exp_accession = experiment_accession or submission_json.get("experiment_accession")
+    exp_alias = experiment_alias or submission_json.get("experiment_alias")
     
-    # Add PLATFORM section
-    platform = ET.SubElement(run, "PLATFORM")
-    platform_type = submission_json.get("platform")
-    
-    if platform_type:
-        platform_element = ET.SubElement(platform, platform_type)
-        
-        # Add INSTRUMENT_MODEL
-        instrument_model = ET.SubElement(platform_element, "INSTRUMENT_MODEL")
-        instrument_model.text = submission_json.get("instrument_model")
+    if exp_accession:
+        experiment_ref.set("accession", exp_accession)
+    elif exp_alias:
+        experiment_ref.set("refname", exp_alias)
+    else:
+        # Raise an error if neither experiment_accession nor experiment_alias is provided
+        raise HTTPException(status_code=400, detail="Experiment accession or alias must be provided")
     
     # Add DATA_BLOCK section
     data_block = ET.SubElement(run, "DATA_BLOCK")
     
     # Add FILES section
     files = ET.SubElement(data_block, "FILES")
+
+    # Add FILE element
+    # First check if files are in a nested 'files' array
+    file_element = ET.SubElement(files, "FILE")
     
-    # Add FILE element(s)
-    if "files" in submission_json and submission_json["files"]:
-        for file_data in submission_json["files"]:
-            file_element = ET.SubElement(files, "FILE")
-            
-            # Add file attributes
-            if "checksum" in file_data:
-                file_element.set("checksum", file_data["checksum"])
-                file_element.set("checksum_method", file_data.get("checksum_method", "MD5"))
-            
-            if "filename" in file_data:
-                file_element.set("filename", file_data["filename"])
-            
-            if "filetype" in file_data:
-                file_element.set("filetype", file_data["filetype"])
-            
-            if "quality_scoring_system" in file_data:
-                file_element.set("quality_scoring_system", file_data["quality_scoring_system"])
+    # Add file attributes from top-level submission_json
+    if "file_checksum" in submission_json:
+        file_element.set("checksum", submission_json["file_checksum"])
+        file_element.set("checksum_method", "MD5")
+    
+    if "file_name" in submission_json:
+        file_element.set("filename", submission_json["file_name"])
+        
+    if "file_format" in submission_json:
+        file_element.set("filetype", submission_json["file_format"])
     
     # Pretty-print the XML
     rough_string = ET.tostring(run_set, 'utf-8')
@@ -371,7 +360,8 @@ def generate_run_xml(submission_json: Dict[str, Any], alias: str, center_name: s
     return reparsed.toprettyxml(indent="  ", encoding="UTF-8").decode('UTF-8')
 
 
-def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
+def generate_runs_xml(runs_data: List[Dict[str, Any]], experiment_accession: Optional[str] = None,
+                   experiment_alias: Optional[str] = None) -> str:
     """
     Generate ENA run XML for multiple runs.
     
@@ -420,26 +410,18 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
         
         # Add EXPERIMENT_REF section
         experiment_ref = ET.SubElement(run, "EXPERIMENT_REF")
-        experiment_accession = submission_json.get("experiment_accession")
         
-        if experiment_accession:
-            experiment_ref.set("accession", experiment_accession)
-            
-            # Add IDENTIFIERS for experiment reference
-            exp_identifiers = ET.SubElement(experiment_ref, "IDENTIFIERS")
-            exp_primary_id = ET.SubElement(exp_identifiers, "PRIMARY_ID")
-            exp_primary_id.text = experiment_accession
+        # Use provided experiment_accession or experiment_alias if available, otherwise fall back to submission_json
+        exp_accession = experiment_accession or submission_json.get("experiment_accession")
+        exp_alias = experiment_alias or submission_json.get("experiment_alias")
         
-        # Add PLATFORM section
-        platform = ET.SubElement(run, "PLATFORM")
-        platform_type = submission_json.get("platform")
-        
-        if platform_type:
-            platform_element = ET.SubElement(platform, platform_type)
-            
-            # Add INSTRUMENT_MODEL
-            instrument_model = ET.SubElement(platform_element, "INSTRUMENT_MODEL")
-            instrument_model.text = submission_json.get("instrument_model")
+        if exp_accession:
+            experiment_ref.set("accession", exp_accession)
+        elif exp_alias:
+            experiment_ref.set("refname", exp_alias)
+        else:
+            # Raise an error if neither experiment_accession nor experiment_alias is provided
+            raise HTTPException(status_code=400, detail="Experiment accession or alias must be provided")
         
         # Add DATA_BLOCK section
         data_block = ET.SubElement(run, "DATA_BLOCK")

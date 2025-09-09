@@ -24,6 +24,8 @@ def get_read_xml(
     *,
     db: Session = Depends(get_db),
     read_id: UUID,
+    experiment_accession: Optional[str] = Query(None, description="Experiment accession to use in the XML"),
+    experiment_alias: Optional[str] = Query(None, description="Experiment refname to use in the XML"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -50,6 +52,8 @@ def get_read_xml(
     xml_content = generate_run_xml(
         submission_json=read.submission_json,
         alias=read.bpa_dataset_id if read.bpa_dataset_id else f"read_{read_id}",
+        experiment_accession=experiment_accession,
+        experiment_alias=experiment_alias,
         accession=read.submission_json.get("run_accession")
     )
     
@@ -63,6 +67,8 @@ def get_reads_xml(
     read_ids: List[UUID] = Query(None, description="List of read IDs to include in the XML"),
     experiment_id: Optional[UUID] = Query(None, description="Filter by experiment ID"),
     status: Optional[str] = Query(None, description="Filter by submission status"),
+    experiment_accession: Optional[str] = Query(None, description="Experiment accession to use in the XML"),
+    experiment_alias: Optional[str] = Query(None, description="Experiment refname to use in the XML"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -118,7 +124,7 @@ def get_reads_xml(
         )
     
     # Generate XML using the utility function
-    xml_content = generate_runs_xml(reads_data)
+    xml_content = generate_runs_xml(reads_data, experiment_accession=experiment_accession, experiment_alias=experiment_alias)
     
     return xml_content
 
@@ -128,6 +134,8 @@ def get_experiment_reads_xml(
     *,
     db: Session = Depends(get_db),
     experiment_id: UUID,
+    experiment_accession: Optional[str] = Query(None, description="Experiment accession to use in the XML"),
+    experiment_alias: Optional[str] = Query(None, description="Experiment refname to use in the XML"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -169,6 +177,6 @@ def get_experiment_reads_xml(
         )
     
     # Generate XML using the utility function
-    xml_content = generate_runs_xml(reads_data)
+    xml_content = generate_runs_xml(reads_data, experiment_accession=experiment_accession, experiment_alias=experiment_alias)
     
     return xml_content
