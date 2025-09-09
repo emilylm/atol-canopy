@@ -447,4 +447,4 @@ def generate_runs_xml(runs_data: List[Dict[str, Any]], experiment_accession: Opt
     # Pretty-print the XML
     rough_string = ET.tostring(run_set, 'utf-8')
     reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ")
+    return reparsed.toprettyxml(indent="  ", encoding="UTF-8").decode('UTF-8')
