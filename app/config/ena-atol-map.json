@@ -42,6 +42,10 @@
   "run": {
     "alias": "bpa_dataset_id",
     "file_name": "file_name",
-    "file_format": "file_format"
+    "file_format": "file_format",
+    "file_checksum": "file_checksum",
+    "bioplatforms_url": "bioplatforms_url",
+    "bpa_resource_id": "bpa_resource_id",
+    "file_submission_date": "file_submission_date"
   }
 }
