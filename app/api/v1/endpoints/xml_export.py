@@ -22,7 +22,7 @@ from app.models.organism import Organism
 router = APIRouter()
 
 
-@router.get("/samples/{sample_id}/xml", response_class=PlainTextResponse)
+@router.get("/samples/{sample_id}", response_class=PlainTextResponse)
 def get_sample_xml(
     *,
     db: Session = Depends(get_db),
@@ -77,7 +77,7 @@ def get_sample_xml(
     
     return xml_content
 
-@router.get("/experiments/package/{bpa_package_id}/samples/xml", response_class=PlainTextResponse)
+@router.get("/experiments/package/{bpa_package_id}", response_class=PlainTextResponse)
 def get_experiment_samples_xml(
     *,
     db: Session = Depends(get_db),

@@ -20,7 +20,7 @@ from app.utils.xml_generator import generate_experiment_xml, generate_runs_xml
 router = APIRouter()
 
 
-@router.get("/experiments/{experiment_id}/xml", response_class=PlainTextResponse)
+@router.get("/experiments/{experiment_id}", response_class=PlainTextResponse)
 def get_experiment_xml(
     *,
     db: Session = Depends(get_db),
@@ -59,7 +59,7 @@ def get_experiment_xml(
     return xml_content
 
 
-@router.get("/experiments/package/{bpa_package_id}/xml", response_class=PlainTextResponse)
+@router.get("/experiments/package/{bpa_package_id}", response_class=PlainTextResponse)
 def get_experiment_by_package_id_xml(
     *,
     db: Session = Depends(get_db),

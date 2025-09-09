@@ -19,7 +19,7 @@ from app.utils.xml_generator import generate_run_xml, generate_runs_xml
 router = APIRouter()
 
 
-@router.get("/reads/{read_id}/xml", response_class=PlainTextResponse)
+@router.get("/reads/{read_id}", response_class=PlainTextResponse)
 def get_read_xml(
     *,
     db: Session = Depends(get_db),
@@ -56,7 +56,7 @@ def get_read_xml(
     return xml_content
 
 
-@router.get("/reads/xml", response_class=PlainTextResponse)
+@router.get("/reads", response_class=PlainTextResponse)
 def get_reads_xml(
     *,
     db: Session = Depends(get_db),
@@ -123,7 +123,7 @@ def get_reads_xml(
     return xml_content
 
 
-@router.get("/experiments/{experiment_id}/reads/xml", response_class=PlainTextResponse)
+@router.get("/experiments/{experiment_id}/reads", response_class=PlainTextResponse)
 def get_experiment_reads_xml(
     *,
     db: Session = Depends(get_db),
