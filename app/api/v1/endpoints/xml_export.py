@@ -16,7 +16,7 @@ from app.core.dependencies import get_current_active_user, get_db, require_role
 from app.models.sample import SampleSubmission
 from app.models.experiment import ExperimentSubmission
 from app.models.user import User
-from app.utils.xml_generator import generate_sample_xml, generate_samples_xml, generate_experiment_xml, generate_experiments_xml
+from app.utils.xml_generator import generate_sample_xml, generate_experiment_xml
 from app.models.organism import Organism
 
 router = APIRouter()
@@ -76,74 +76,6 @@ def get_sample_xml(
     )
     
     return xml_content
-
-
-@router.get("/samples/xml", response_class=PlainTextResponse)
-def get_samples_xml(
-    *,
-    db: Session = Depends(get_db),
-    sample_ids: List[UUID] = Query(None, description="List of sample IDs to include in the XML"),
-    status: Optional[str] = Query(None, description="Filter by submission status"),
-    current_user: User = Depends(get_current_active_user),
-) -> Any:
-    """
-    Generate ENA sample XML for multiple samples.
-    
-    Returns the XML representation of the sample submission data for all specified samples.
-    If no sample_ids are provided, all samples with the specified status are included.
-    """
-    # Build the query
-    query = db.query(SampleSubmission)
-    
-    # Apply filters if provided
-    if sample_ids:
-        query = query.filter(SampleSubmission.sample_id.in_(sample_ids))
-    
-    if status:
-        query = query.filter(SampleSubmission.status == status)
-    
-    # Get the samples
-    samples = query.all()
-    
-    if not samples:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No sample submission data found matching the criteria",
-        )
-    
-    # Prepare the data for XML generation
-    samples_data = []
-    for sample in samples:
-        if not sample.submission_json:
-            continue
-            
-        # Get the sample accession if available
-        accession = None
-        if sample.sample and sample.sample.sample_accession:
-            accession = sample.sample.sample_accession
-            
-        # Use the BPA sample ID as the alias if available
-        alias = f"sample_{sample.sample_id}"
-        if sample.sample and sample.sample.bpa_sample_id:
-            alias = sample.sample.bpa_sample_id
-            
-        samples_data.append({
-            "submission_json": sample.submission_json,
-            "alias": alias,
-            "accession": accession
-        })
-    
-    if not samples_data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="None of the selected samples have submission_json data",
-        )
-    
-    # Generate XML using the utility function
-    xml_content = generate_samples_xml(samples_data)
-    
-    return xml_content
-
 
 @router.get("/experiments/package/{bpa_package_id}/samples/xml", response_class=PlainTextResponse)
 def get_experiment_samples_xml(
