@@ -205,7 +205,6 @@ def generate_experiment_xml(submission_json: Dict[str, Any], alias: str, study_a
     library_selection.text = submission_json.get("library_selection", None)
     
     library_construction_protocol = ET.SubElement(library_descriptor, "LIBRARY_CONSTRUCTION_PROTOCOL")
-    library_construction_protocol = ET.SubElement(library_descriptor, "LIBRARY_CONSTRUCTION_PROTOCOL")
     library_construction_protocol.text = submission_json.get("library_construction_protocol", None)
 
     insert_size = ET.SubElement(library_descriptor, "INSERT_SIZE")
