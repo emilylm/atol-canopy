@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 
-def generate_run_xml(submission_json: Dict[str, Any], alias: str, center_name: str = "AToL",
+def generate_run_xml11(submission_json: Dict[str, Any], alias: str, center_name: str = "AToL",
                     broker_name: str = "AToL", accession: Optional[str] = None) -> str:
     """
     Generate ENA run XML from submission JSON data.
@@ -103,7 +103,7 @@ def generate_run_xml(submission_json: Dict[str, Any], alias: str, center_name: s
     return reparsed.toprettyxml(indent="  ")
 
 
-def generate_runs_xml(runs_data: List[Dict[str, Any]]) -> str:
+def generate_runs_xml22(runs_data: List[Dict[str, Any]]) -> str:
     """
     Generate ENA run XML for multiple runs.
     

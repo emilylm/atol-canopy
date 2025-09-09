@@ -133,8 +133,9 @@ def generate_sample_xml(organism: Organism, submission_json: Dict[str, Any], ali
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ", encoding="UTF-8").decode('UTF-8')
 
-def generate_experiment_xml(submission_json: Dict[str, Any], alias: str, center_name: str = "AToL",
-                          broker_name: str = "AToL", accession: Optional[str] = None) -> str:
+def generate_experiment_xml(submission_json: Dict[str, Any], alias: str, study_accession: Optional[str] = None,
+                          study_alias: Optional[str] = None, sample_accession: Optional[str] = None, sample_alias: Optional[str] = None,
+                          center_name: str = "AToL", broker_name: str = "AToL", accession: Optional[str] = None) -> str:
     """
     Generate ENA experiment XML from submission JSON data.
     
@@ -171,14 +172,16 @@ def generate_experiment_xml(submission_json: Dict[str, Any], alias: str, center_
     
     # Add title
     title = ET.SubElement(experiment, "TITLE")
-    title.text = submission_json.get("title", f"{alias} experiment")
+    title.text = submission_json.get("title", alias)
     
     # TODO study reference
     study_ref = ET.SubElement(experiment, "STUDY_REF")
-    if "study_accession" in submission_json:
-        study_ref.set("accession", submission_json["study_accession"])
+    if study_accession:
+        study_ref.set("accession", study_accession)
+    elif study_alias:
+        study_ref.set("refname", study_alias)
     else:
-        study_ref.set("refname", submission_json.get("study_refname", "AToL_study"))
+        raise HTTPException(status_code=400, detail="Study accession or refname must be provided")
     
     # Add design section
     design = ET.SubElement(experiment, "DESIGN")
@@ -189,10 +192,12 @@ def generate_experiment_xml(submission_json: Dict[str, Any], alias: str, center_
     
     # Add sample descriptor
     sample_descriptor = ET.SubElement(design, "SAMPLE_DESCRIPTOR")
-    if "sample_accession" in submission_json:
-        sample_descriptor.set("accession", submission_json["sample_accession"])
-    elif "sample_refname" in submission_json:
-        sample_descriptor.set("refname", submission_json["sample_refname"])
+    if sample_accession:
+        sample_descriptor.set("accession", sample_accession)
+    elif sample_alias:
+        sample_descriptor.set("refname", sample_alias)
+    else:
+        raise HTTPException(status_code=400, detail="Sample accession or refname must be provided")
     
     # Add library descriptor
     library_descriptor = ET.SubElement(design, "LIBRARY_DESCRIPTOR")

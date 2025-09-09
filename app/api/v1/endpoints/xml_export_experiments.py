@@ -25,6 +25,10 @@ def get_experiment_xml(
     *,
     db: Session = Depends(get_db),
     experiment_id: UUID,
+    study_accession: Optional[str] = Query(None, description="Study accession to use in the XML"),
+    study_alias: Optional[str] = Query(None, description="Study refname to use in the XML"),
+    sample_accession: Optional[str] = Query(None, description="Sample accession to use in the XML"),
+    sample_alias: Optional[str] = Query(None, description="Sample refname to use in the XML"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -53,6 +57,10 @@ def get_experiment_xml(
     xml_content = generate_experiment_xml(
         submission_json=experiment_submission.submission_json,
         alias=experiment_submission.submission_json.get("alias"),
+        study_accession=study_accession,
+        study_alias=study_alias,
+        sample_accession=sample_accession,
+        sample_alias=sample_alias,
         accession=experiment_submission.experiment_accession if experiment_submission.experiment_accession else None
     )
     
@@ -64,6 +72,10 @@ def get_experiment_by_package_id_xml(
     *,
     db: Session = Depends(get_db),
     bpa_package_id: str,
+    study_accession: Optional[str] = Query(None, description="Study accession to use in the XML"),
+    study_alias: Optional[str] = Query(None, description="Study refname to use in the XML"),
+    sample_accession: Optional[str] = Query(None, description="Sample accession to use in the XML"),
+    sample_alias: Optional[str] = Query(None, description="Sample refname to use in the XML"),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -100,7 +112,11 @@ def get_experiment_by_package_id_xml(
     xml_content = generate_experiment_xml(
         submission_json=experiment_submission.submission_json,
         alias=experiment_submission.submission_json.get("alias"),
-        accession=experiment_submission.experiment_accession
+        study_accession=study_accession,
+        study_alias=study_alias,
+        sample_accession=sample_accession,
+        sample_alias=sample_alias,
+        accession=experiment_submission.experiment_accession if experiment_submission.experiment_accession else None
     )
     
     return xml_content
